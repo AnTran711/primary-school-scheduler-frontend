@@ -14,8 +14,10 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@tailwindcss/vite": "^4.2.4",
+    "axios": "^1.13.5",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
+    "react-toastify": "^11.1.0",
     "tailwindcss": "^4.2.4",
     "zustand": "^5.0.12"
   },
