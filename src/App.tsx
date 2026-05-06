@@ -1,9 +1,11 @@
 import { ToastContainer } from 'react-toastify';
+import { RouterProvider } from 'react-router-dom';
+import router from './router';
 
 function App() {
   return (
     <>
-      <p>This is Primary School Scheduler app</p>
+      <RouterProvider router={router} />
 
       <ToastContainer />
     </>
