@@ -1,58 +1,48 @@
 import { useMemo, useState } from 'react';
 import { SearchOutlined, AddOutlined } from '@mui/icons-material';
 import { Button, InputAdornment, TextField } from '@mui/material';
-import type { Teacher } from '@/types/teacher';
 import type { ColumnDef } from '@/components/ui/data-table';
 import DataTable from '@/components/ui/data-table';
 import FormDialog, { type FieldDef } from '@/components/ui/form-dialog';
-import {
-  teacherSchema,
-  type TeacherFormValues
-} from '@/schemas/teacher.schema';
-import { useTeacherStore } from '@/stores/teacher-store';
-import {
-  createTeacherAPI,
-  deleteTeacherAPI,
-  updateTeacherAPI
-} from '@/api/teacher.api';
 import { toast } from 'react-toastify';
 import DeleteDialog from '@/components/ui/delete-dialog';
+import {
+  subjectSchema,
+  type SubjectFormValues
+} from '@/schemas/subject.schema';
+import type { Subject } from '@/types/subject';
+import { useSubjectStore } from '@/stores/subject-store';
+import {
+  createSubjectAPI,
+  deleteSubjectAPI,
+  updateSubjectAPI
+} from '@/api/subject.api';
 
-// ─── Main Teacher Page ─────────────────────────────────────────────────────────
+// ─── Main Subject Page ─────────────────────────────────────────────────────────
 
-const TeacherPage = () => {
+const SubjectPage = () => {
   const [searchName, setSearchName] = useState('');
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [editTarget, setEditTarget] = useState<TeacherFormValues | undefined>();
+  const [editTarget, setEditTarget] = useState<SubjectFormValues | undefined>();
   const [editId, setEditId] = useState<string | undefined>();
-  const [deleteTarget, setDeleteTarget] = useState<Teacher | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Subject | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const teachers = useTeacherStore((state) => state.teachers);
+  const subjects = useSubjectStore((state) => state.subjects);
 
-  const teacherColumns: ColumnDef<Teacher>[] = [
+  const subjectColumns: ColumnDef<Subject>[] = [
     {
       key: 'name',
-      label: 'Tên giáo viên'
-    },
-    {
-      key: 'numberOfLessonsPerWeek',
-      label: 'Số tiết mỗi tuần',
-      align: 'center'
+      label: 'Tên môn học'
     }
   ];
 
-  const teacherFields: FieldDef<TeacherFormValues>[] = [
+  const subjectFields: FieldDef<SubjectFormValues>[] = [
     {
       key: 'name',
-      label: 'Tên giáo viên',
+      label: 'Tên môn học',
       type: 'text'
-    },
-    {
-      key: 'numberOfLessonsPerWeek',
-      label: 'Số tiết mỗi tuần',
-      type: 'number'
     }
   ];
 
@@ -64,10 +54,10 @@ const TeacherPage = () => {
 
   // Bật form dialog để chỉnh sửa, điền sẵn data cũ vào form
   const handleEdit = (id: string) => {
-    const teacher = teachers.find((t) => t.id === id);
-    if (!teacher) return;
+    const subject = subjects.find((s) => s.id === id);
+    if (!subject) return;
 
-    setEditTarget(teacher); // điền form sẵn dữ liệu cũ
+    setEditTarget(subject); // điền form sẵn dữ liệu cũ
     setEditId(id);
 
     setOpen(true);
@@ -75,10 +65,10 @@ const TeacherPage = () => {
 
   // Mở dialog xác nhận xoá
   const handleDelete = async (id: string) => {
-    const teacher = teachers.find((t) => t.id === id);
+    const subject = subjects.find((s) => s.id === id);
 
-    if (!teacher) return;
-    setDeleteTarget(teacher);
+    if (!subject) return;
+    setDeleteTarget(subject);
   };
 
   // Gọi API xoá, cập nhật lại state, đóng dialog
@@ -86,14 +76,14 @@ const TeacherPage = () => {
     if (!deleteTarget) return;
     try {
       setDeleteLoading(true);
-      const res = await deleteTeacherAPI(deleteTarget.id);
+      const res = await deleteSubjectAPI(deleteTarget.id);
 
       toast.success(res.message);
 
-      const updatedTeachers = teachers.filter(
-        (teacher) => teacher.id !== deleteTarget.id
+      const updatedSubjects = subjects.filter(
+        (subject) => subject.id !== deleteTarget.id
       );
-      useTeacherStore.getState().setTeachers(updatedTeachers);
+      useSubjectStore.getState().setSubjects(updatedSubjects);
     } catch (error) {
       console.error(error);
     } finally {
@@ -103,26 +93,26 @@ const TeacherPage = () => {
   };
 
   // Gọi API tạo mới hoặc cập nhật, cập nhật lại state, đóng dialog
-  const handleSubmit = async (values: TeacherFormValues) => {
+  const handleSubmit = async (values: SubjectFormValues) => {
     try {
       let res;
       setLoading(true);
       if (editTarget && editId) {
-        res = await updateTeacherAPI(editId, values);
-        const updatedTeacher = res.data;
+        res = await updateSubjectAPI(editId, values);
+        const updatedSubject = res.data;
 
-        const updatedTeachers = teachers.map((teacher) =>
-          teacher.id === editId ? updatedTeacher : teacher
+        const updatedSubjects = subjects.map((subject) =>
+          subject.id === editId ? updatedSubject : subject
         );
 
-        useTeacherStore.getState().setTeachers(updatedTeachers);
+        useSubjectStore.getState().setSubjects(updatedSubjects);
       } else {
-        res = await createTeacherAPI(values);
-        const newTeacher = res.data;
+        res = await createSubjectAPI(values);
+        const newSubject = res.data;
 
-        const newTeachers = [...teachers, newTeacher];
+        const newSubjects = [...subjects, newSubject];
 
-        useTeacherStore.getState().setTeachers(newTeachers);
+        useSubjectStore.getState().setSubjects(newSubjects);
       }
       console.log('API response', res);
       toast.success(res.message);
@@ -135,12 +125,12 @@ const TeacherPage = () => {
   };
 
   // Tìm kiếm theo tên (client-side, filter trên state đã có)
-  const filteredTeachers = useMemo(() => {
-    if (searchName.trim() === '') return teachers;
-    return teachers.filter((teacher) =>
-      teacher.name.toLowerCase().includes(searchName.toLowerCase())
+  const filteredSubjects = useMemo(() => {
+    if (searchName.trim() === '') return subjects;
+    return subjects.filter((subject) =>
+      subject.name.toLowerCase().includes(searchName.toLowerCase())
     );
-  }, [searchName, teachers]);
+  }, [searchName, subjects]);
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
@@ -150,7 +140,7 @@ const TeacherPage = () => {
         <div className="mb-6 flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              Quản lý giáo viên
+              Quản lý môn học
             </h1>
           </div>
 
@@ -176,25 +166,25 @@ const TeacherPage = () => {
             {/* Add button */}
             <Button variant="contained" onClick={handleAdd}>
               <AddOutlined fontSize="small" />
-              Thêm giáo viên mới
+              Thêm môn học mới
             </Button>
           </div>
         </div>
 
         {/* Table */}
         <DataTable
-          columns={teacherColumns}
-          rows={filteredTeachers}
+          columns={subjectColumns}
+          rows={filteredSubjects}
           onEdit={handleEdit}
           onDelete={handleDelete}
         ></DataTable>
       </main>
 
-      <FormDialog<TeacherFormValues>
+      <FormDialog<SubjectFormValues>
         open={open}
-        title={editTarget ? 'Chỉnh sửa giáo viên' : 'Thêm giáo viên mới'}
-        fields={teacherFields}
-        schema={teacherSchema}
+        title={editTarget ? 'Chỉnh sửa môn học' : 'Thêm môn học mới'}
+        fields={subjectFields}
+        schema={subjectSchema}
         initialValues={editTarget}
         onSubmit={handleSubmit}
         onClose={() => setOpen(false)}
@@ -212,4 +202,4 @@ const TeacherPage = () => {
   );
 };
 
-export default TeacherPage;
+export default SubjectPage;

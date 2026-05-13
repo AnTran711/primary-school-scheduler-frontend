@@ -31,7 +31,7 @@ const NAV_ITEMS: NavItem[] = [
   {
     label: 'Điểm trường',
     icon: <AccountBalance fontSize="small" />,
-    path: '/schools'
+    path: '/branch-schools'
   },
   { label: 'Lớp học', icon: <Class fontSize="small" />, path: '/classes' },
   { label: 'Môn học', icon: <MenuBook fontSize="small" />, path: '/subjects' }

@@ -1,58 +1,50 @@
 import { useMemo, useState } from 'react';
 import { SearchOutlined, AddOutlined } from '@mui/icons-material';
 import { Button, InputAdornment, TextField } from '@mui/material';
-import type { Teacher } from '@/types/teacher';
 import type { ColumnDef } from '@/components/ui/data-table';
 import DataTable from '@/components/ui/data-table';
 import FormDialog, { type FieldDef } from '@/components/ui/form-dialog';
-import {
-  teacherSchema,
-  type TeacherFormValues
-} from '@/schemas/teacher.schema';
-import { useTeacherStore } from '@/stores/teacher-store';
-import {
-  createTeacherAPI,
-  deleteTeacherAPI,
-  updateTeacherAPI
-} from '@/api/teacher.api';
 import { toast } from 'react-toastify';
 import DeleteDialog from '@/components/ui/delete-dialog';
+import {
+  branchSchoolSchema,
+  type BranchSchoolFormValues
+} from '@/schemas/branch-school.schema';
+import type { BranchSchool } from '@/types/branch-school';
+import { useBranchSchoolStore } from '@/stores/branch-school-store';
+import {
+  createBranchSchoolAPI,
+  deleteBranchSchoolAPI,
+  updateBranchSchoolAPI
+} from '@/api/branch-school.api';
 
-// ─── Main Teacher Page ─────────────────────────────────────────────────────────
+// ─── Main Branch School Page ─────────────────────────────────────────────────────────
 
-const TeacherPage = () => {
+const BranchSchoolPage = () => {
   const [searchName, setSearchName] = useState('');
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [editTarget, setEditTarget] = useState<TeacherFormValues | undefined>();
+  const [editTarget, setEditTarget] = useState<
+    BranchSchoolFormValues | undefined
+  >();
   const [editId, setEditId] = useState<string | undefined>();
-  const [deleteTarget, setDeleteTarget] = useState<Teacher | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<BranchSchool | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const teachers = useTeacherStore((state) => state.teachers);
+  const branchSchools = useBranchSchoolStore((state) => state.branchSchools);
 
-  const teacherColumns: ColumnDef<Teacher>[] = [
+  const branchSchoolColumns: ColumnDef<BranchSchool>[] = [
     {
       key: 'name',
-      label: 'Tên giáo viên'
-    },
-    {
-      key: 'numberOfLessonsPerWeek',
-      label: 'Số tiết mỗi tuần',
-      align: 'center'
+      label: 'Tên điểm trường'
     }
   ];
 
-  const teacherFields: FieldDef<TeacherFormValues>[] = [
+  const branchSchoolFields: FieldDef<BranchSchoolFormValues>[] = [
     {
       key: 'name',
-      label: 'Tên giáo viên',
+      label: 'Tên điểm trường',
       type: 'text'
-    },
-    {
-      key: 'numberOfLessonsPerWeek',
-      label: 'Số tiết mỗi tuần',
-      type: 'number'
     }
   ];
 
@@ -64,10 +56,10 @@ const TeacherPage = () => {
 
   // Bật form dialog để chỉnh sửa, điền sẵn data cũ vào form
   const handleEdit = (id: string) => {
-    const teacher = teachers.find((t) => t.id === id);
-    if (!teacher) return;
+    const branchSchool = branchSchools.find((bs) => bs.id === id);
+    if (!branchSchool) return;
 
-    setEditTarget(teacher); // điền form sẵn dữ liệu cũ
+    setEditTarget(branchSchool); // điền form sẵn dữ liệu cũ
     setEditId(id);
 
     setOpen(true);
@@ -75,10 +67,10 @@ const TeacherPage = () => {
 
   // Mở dialog xác nhận xoá
   const handleDelete = async (id: string) => {
-    const teacher = teachers.find((t) => t.id === id);
+    const branchSchool = branchSchools.find((bs) => bs.id === id);
 
-    if (!teacher) return;
-    setDeleteTarget(teacher);
+    if (!branchSchool) return;
+    setDeleteTarget(branchSchool);
   };
 
   // Gọi API xoá, cập nhật lại state, đóng dialog
@@ -86,14 +78,14 @@ const TeacherPage = () => {
     if (!deleteTarget) return;
     try {
       setDeleteLoading(true);
-      const res = await deleteTeacherAPI(deleteTarget.id);
+      const res = await deleteBranchSchoolAPI(deleteTarget.id);
 
       toast.success(res.message);
 
-      const updatedTeachers = teachers.filter(
-        (teacher) => teacher.id !== deleteTarget.id
+      const updatedBranchSchools = branchSchools.filter(
+        (branchSchool) => branchSchool.id !== deleteTarget.id
       );
-      useTeacherStore.getState().setTeachers(updatedTeachers);
+      useBranchSchoolStore.getState().setBranchSchools(updatedBranchSchools);
     } catch (error) {
       console.error(error);
     } finally {
@@ -103,26 +95,26 @@ const TeacherPage = () => {
   };
 
   // Gọi API tạo mới hoặc cập nhật, cập nhật lại state, đóng dialog
-  const handleSubmit = async (values: TeacherFormValues) => {
+  const handleSubmit = async (values: BranchSchoolFormValues) => {
     try {
       let res;
       setLoading(true);
       if (editTarget && editId) {
-        res = await updateTeacherAPI(editId, values);
-        const updatedTeacher = res.data;
+        res = await updateBranchSchoolAPI(editId, values);
+        const updatedBranchSchool = res.data;
 
-        const updatedTeachers = teachers.map((teacher) =>
-          teacher.id === editId ? updatedTeacher : teacher
+        const updatedBranchSchools = branchSchools.map((branchSchool) =>
+          branchSchool.id === editId ? updatedBranchSchool : branchSchool
         );
 
-        useTeacherStore.getState().setTeachers(updatedTeachers);
+        useBranchSchoolStore.getState().setBranchSchools(updatedBranchSchools);
       } else {
-        res = await createTeacherAPI(values);
-        const newTeacher = res.data;
+        res = await createBranchSchoolAPI(values);
+        const newBranchSchool = res.data;
 
-        const newTeachers = [...teachers, newTeacher];
+        const newBranchSchools = [...branchSchools, newBranchSchool];
 
-        useTeacherStore.getState().setTeachers(newTeachers);
+        useBranchSchoolStore.getState().setBranchSchools(newBranchSchools);
       }
       console.log('API response', res);
       toast.success(res.message);
@@ -135,12 +127,12 @@ const TeacherPage = () => {
   };
 
   // Tìm kiếm theo tên (client-side, filter trên state đã có)
-  const filteredTeachers = useMemo(() => {
-    if (searchName.trim() === '') return teachers;
-    return teachers.filter((teacher) =>
-      teacher.name.toLowerCase().includes(searchName.toLowerCase())
+  const filteredBranchSchools = useMemo(() => {
+    if (searchName.trim() === '') return branchSchools;
+    return branchSchools.filter((branchSchool) =>
+      branchSchool.name.toLowerCase().includes(searchName.toLowerCase())
     );
-  }, [searchName, teachers]);
+  }, [searchName, branchSchools]);
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
@@ -150,7 +142,7 @@ const TeacherPage = () => {
         <div className="mb-6 flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              Quản lý giáo viên
+              Quản lý điểm trường
             </h1>
           </div>
 
@@ -176,25 +168,25 @@ const TeacherPage = () => {
             {/* Add button */}
             <Button variant="contained" onClick={handleAdd}>
               <AddOutlined fontSize="small" />
-              Thêm giáo viên mới
+              Thêm điểm trường mới
             </Button>
           </div>
         </div>
 
         {/* Table */}
         <DataTable
-          columns={teacherColumns}
-          rows={filteredTeachers}
+          columns={branchSchoolColumns}
+          rows={filteredBranchSchools}
           onEdit={handleEdit}
           onDelete={handleDelete}
         ></DataTable>
       </main>
 
-      <FormDialog<TeacherFormValues>
+      <FormDialog<BranchSchoolFormValues>
         open={open}
-        title={editTarget ? 'Chỉnh sửa giáo viên' : 'Thêm giáo viên mới'}
-        fields={teacherFields}
-        schema={teacherSchema}
+        title={editTarget ? 'Chỉnh sửa điểm trường' : 'Thêm điểm trường mới'}
+        fields={branchSchoolFields}
+        schema={branchSchoolSchema}
         initialValues={editTarget}
         onSubmit={handleSubmit}
         onClose={() => setOpen(false)}
@@ -212,4 +204,4 @@ const TeacherPage = () => {
   );
 };
 
-export default TeacherPage;
+export default BranchSchoolPage;

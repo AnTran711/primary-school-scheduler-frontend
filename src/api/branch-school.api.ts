@@ -1,17 +1,17 @@
 import { useBranchSchoolStore } from '@/stores/branch-school-store';
 import api from './axios-client';
+import type { ApiResponse } from '@/types/api-response';
+import type { BranchSchool } from '@/types/branch-school';
 
 export const createBranchSchoolAPI = async (branchSchoolData: {
   name: string;
 }) => {
-  const res = await api.post('/branch-schools', branchSchoolData);
+  const res: ApiResponse<BranchSchool> = await api.post(
+    '/branch-schools',
+    branchSchoolData
+  );
 
-  const newBranchSchool = res.data;
-
-  const currentBranchSchools = useBranchSchoolStore.getState().branchSchools;
-  currentBranchSchools.push(newBranchSchool);
-
-  useBranchSchoolStore.getState().setBranchSchools(currentBranchSchools);
+  return res;
 };
 
 export const fetchBranchSchoolsAPI = async () => {
@@ -27,24 +27,18 @@ export const updateBranchSchoolAPI = async (
     name: string;
   }
 ) => {
-  const res = await api.put(`/branch-schools/${branchSchoolId}`, updateData);
-
-  const updatedBranchSchool = res.data;
-
-  const currentBranchSchools = useBranchSchoolStore.getState().branchSchools;
-  const updatedBranchSchools = currentBranchSchools.map((branchSchool) =>
-    branchSchool.id === branchSchoolId ? updatedBranchSchool : branchSchool
+  const res: ApiResponse<BranchSchool> = await api.put(
+    `/branch-schools/${branchSchoolId}`,
+    updateData
   );
 
-  useBranchSchoolStore.getState().setBranchSchools(updatedBranchSchools);
+  return res;
 };
 
 export const deleteBranchSchoolAPI = async (branchSchoolId: string) => {
-  await api.delete(`/branch-schools/${branchSchoolId}`);
-
-  const currentBranchSchools = useBranchSchoolStore.getState().branchSchools;
-  const updatedBranchSchools = currentBranchSchools.filter(
-    (branchSchool) => branchSchool.id !== branchSchoolId
+  const res: ApiResponse<string> = await api.delete(
+    `/branch-schools/${branchSchoolId}`
   );
-  useBranchSchoolStore.getState().setBranchSchools(updatedBranchSchools);
+
+  return res;
 };

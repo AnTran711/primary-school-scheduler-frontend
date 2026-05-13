@@ -1,19 +1,19 @@
 import { useSchoolClassStore } from '@/stores/school-class-store';
 import api from './axios-client';
+import type { ApiResponse } from '@/types/api-response';
+import type { SchoolClass } from '@/types/school-class';
 
 export const createSchoolClassAPI = async (schoolClassData: {
   name: string;
   branchSchoolId: string;
   homeroomTeacherId: string;
 }) => {
-  const res = await api.post('/classes', schoolClassData);
+  const res: ApiResponse<SchoolClass> = await api.post(
+    '/classes',
+    schoolClassData
+  );
 
-  const newSchoolClass = res.data;
-
-  const currentSchoolClasses = useSchoolClassStore.getState().schoolClasses;
-  currentSchoolClasses.push(newSchoolClass);
-
-  useSchoolClassStore.getState().setSchoolClasses(currentSchoolClasses);
+  return res;
 };
 
 export const fetchSchoolClassesAPI = async () => {
@@ -31,24 +31,18 @@ export const updateSchoolClassAPI = async (
     homeroomTeacherId: string;
   }
 ) => {
-  const res = await api.put(`/classes/${schoolClassId}`, updateData);
-
-  const updatedSchoolClass = res.data;
-
-  const currentSchoolClasses = useSchoolClassStore.getState().schoolClasses;
-  const updatedSchoolClasses = currentSchoolClasses.map((schoolClass) =>
-    schoolClass.id === schoolClassId ? updatedSchoolClass : schoolClass
+  const res: ApiResponse<SchoolClass> = await api.put(
+    `/classes/${schoolClassId}`,
+    updateData
   );
 
-  useSchoolClassStore.getState().setSchoolClasses(updatedSchoolClasses);
+  return res;
 };
 
 export const deleteSchoolClassAPI = async (schoolClassId: string) => {
-  await api.delete(`/classes/${schoolClassId}`);
-
-  const currentSchoolClasses = useSchoolClassStore.getState().schoolClasses;
-  const updatedSchoolClasses = currentSchoolClasses.filter(
-    (schoolClass) => schoolClass.id !== schoolClassId
+  const res: ApiResponse<string> = await api.delete(
+    `/classes/${schoolClassId}`
   );
-  useSchoolClassStore.getState().setSchoolClasses(updatedSchoolClasses);
+
+  return res;
 };

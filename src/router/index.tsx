@@ -3,6 +3,8 @@ import MainLayout from '@/layouts/main-layout';
 import TeacherPage from '@/pages/teacher-page';
 import LoginPage from '@/pages/login-page';
 import ProtectedRoute from '@/components/protected-route';
+import BranchSchoolPage from '@/pages/branch-school-page';
+import SubjectPage from '@/pages/subject-page';
 
 const router = createBrowserRouter([
   // ── Public routes ──────────────────────────────────────────────────────────
@@ -26,10 +28,16 @@ const router = createBrowserRouter([
           {
             path: '/teachers',
             element: <TeacherPage />
+          },
+          {
+            path: '/branch-schools',
+            element: <BranchSchoolPage />
+          },
+          {
+            path: '/subjects',
+            element: <SubjectPage />
           }
           // Thêm các route khác vào đây
-          // { path: '/subjects', element: <SubjectPage /> },
-          // { path: '/schools',  element: <SchoolPage />  },
           // { path: '/classes',  element: <ClassPage />   },
         ]
       }

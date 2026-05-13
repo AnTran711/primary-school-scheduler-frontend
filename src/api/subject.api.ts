@@ -1,15 +1,12 @@
 import { useSubjectStore } from '@/stores/subject-store';
 import api from './axios-client';
+import type { ApiResponse } from '@/types/api-response';
+import type { Subject } from '@/types/subject';
 
 export const createSubjectAPI = async (subjectData: { name: string }) => {
-  const res = await api.post('/subjects', subjectData);
+  const res: ApiResponse<Subject> = await api.post('/subjects', subjectData);
 
-  const newSubject = res.data;
-
-  const currentSubjects = useSubjectStore.getState().subjects;
-  currentSubjects.push(newSubject);
-
-  useSubjectStore.getState().setSubjects(currentSubjects);
+  return res;
 };
 
 export const fetchSubjectsAPI = async () => {
@@ -25,24 +22,16 @@ export const updateSubjectAPI = async (
     name: string;
   }
 ) => {
-  const res = await api.put(`/subjects/${subjectId}`, updateData);
-
-  const updatedSubject = res.data;
-
-  const currentSubjects = useSubjectStore.getState().subjects;
-  const updatedSubjects = currentSubjects.map((subject) =>
-    subject.id === subjectId ? updatedSubject : subject
+  const res: ApiResponse<Subject> = await api.put(
+    `/subjects/${subjectId}`,
+    updateData
   );
 
-  useSubjectStore.getState().setSubjects(updatedSubjects);
+  return res;
 };
 
 export const deleteSubjectAPI = async (subjectId: string) => {
-  await api.delete(`/subjects/${subjectId}`);
+  const res: ApiResponse<string> = await api.delete(`/subjects/${subjectId}`);
 
-  const currentSubjects = useSubjectStore.getState().subjects;
-  const updatedSubjects = currentSubjects.filter(
-    (subject) => subject.id !== subjectId
-  );
-  useSubjectStore.getState().setSubjects(updatedSubjects);
+  return res;
 };
