@@ -12,8 +12,17 @@ import {
   Divider
 } from '@mui/material';
 import { CloseOutlined } from '@mui/icons-material';
-import { useState, useEffect, useRef } from 'react';
-import type { ZodType } from 'zod';
+import { useEffect, useRef } from 'react';
+import {
+  useForm,
+  Controller,
+  type FieldValues,
+  type Resolver,
+  type DefaultValues,
+  type Path
+} from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import type { ZodObject } from 'zod';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -27,52 +36,41 @@ export interface SelectOption {
 export interface FieldDef<T> {
   key: keyof T;
   label: string;
-  type?: FieldType; // mặc định 'text'
+  type?: FieldType;
   placeholder?: string;
   required?: boolean;
-  options?: SelectOption[]; // chỉ dùng khi type === 'select'
+  options?: SelectOption[];
   disabled?: boolean;
 }
 
-interface FormDialogProps<T extends Record<string, unknown>> {
+interface FormDialogProps<T extends FieldValues> {
   open: boolean;
-  title: string; // VD: 'Thêm giáo viên', 'Chỉnh sửa môn học'
+  title: string;
   fields: FieldDef<T>[];
-  schema?: ZodType<T>;
-  initialValues?: Partial<T>; // truyền khi edit, để trống khi add
+  schema?: ZodObject;
+  initialValues?: Partial<T>;
   onSubmit: (values: T) => void;
   onClose: () => void;
-  submitLabel?: string; // mặc định 'Lưu'
+  submitLabel?: string;
   loading?: boolean;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const buildInitialState = <T extends Record<string, unknown>>(
+const buildDefaultValues = <T extends FieldValues>(
   fields: FieldDef<T>[],
   initialValues?: Partial<T>
-): Record<string, unknown> => {
-  const state: Record<string, unknown> = {};
+): DefaultValues<T> => {
+  const defaults: Record<string, unknown> = {};
   for (const field of fields) {
-    const key = field.key as string;
-    state[key] = initialValues?.[field.key] ?? '';
+    defaults[field.key as string] = initialValues?.[field.key] ?? '';
   }
-  return state;
-};
-
-const buildErrors = <T extends Record<string, unknown>>(
-  fields: FieldDef<T>[]
-): Record<string, string> => {
-  const errors: Record<string, string> = {};
-  for (const field of fields) {
-    errors[field.key as string] = '';
-  }
-  return errors;
+  return defaults as DefaultValues<T>;
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-const FormDialog = <T extends Record<string, unknown>>({
+const FormDialog = <T extends FieldValues>({
   open,
   title,
   fields,
@@ -83,97 +81,40 @@ const FormDialog = <T extends Record<string, unknown>>({
   submitLabel = 'Lưu',
   loading = false
 }: FormDialogProps<T>) => {
-  const [values, setValues] = useState<Record<string, unknown>>(() =>
-    buildInitialState(fields, initialValues)
-  );
-  const [errors, setErrors] = useState<Record<string, string>>(() =>
-    buildErrors(fields)
-  );
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors }
+  } = useForm<T>({
+    resolver: schema ? (zodResolver(schema) as Resolver<T>) : undefined,
+    defaultValues: buildDefaultValues(fields, initialValues)
+  });
 
-  // Reset form khi dialog mở lại với data mới
+  // Reset form mỗi khi dialog mở — điền data cũ (edit) hoặc form rỗng (add)
   const fieldsRef = useRef(fields);
   const initialValuesRef = useRef(initialValues);
 
-  // Luôn cập nhật ref khi prop thay đổi
   useEffect(() => {
     fieldsRef.current = fields;
     initialValuesRef.current = initialValues;
   });
 
-  // Chỉ reset khi open === true, đọc giá trị qua ref
   useEffect(() => {
     if (open) {
-      setValues(buildInitialState(fieldsRef.current, initialValuesRef.current));
-      setErrors(buildErrors(fieldsRef.current));
+      reset(buildDefaultValues(fieldsRef.current, initialValuesRef.current));
     }
-  }, [open]);
+  }, [open, reset]);
 
-  // ── Handlers ────────────────────────────────────────────────────────────────
-
-  const handleChange = (key: string, value: unknown) => {
-    setValues((prev) => ({ ...prev, [key]: value }));
-    // Xoá lỗi khi user bắt đầu nhập lại
-    if (errors[key]) {
-      setErrors((prev) => ({ ...prev, [key]: '' }));
-    }
-  };
-
-  const validate = (): boolean => {
-    if (!schema) {
-      const newErrors: Record<string, string> = {};
-      let isValid = true;
-
-      for (const field of fields) {
-        const key = field.key as string;
-        const value = values[key];
-
-        if (
-          field.required &&
-          (value === '' || value === null || value === undefined)
-        ) {
-          newErrors[key] = `${field.label} không được để trống`;
-          isValid = false;
-        } else {
-          newErrors[key] = '';
-        }
-      }
-
-      setErrors(newErrors);
-      return isValid;
-    }
-
-    // Có schema → dùng Zod
-    const result = schema.safeParse(values);
-
-    if (result.success) {
-      setErrors(buildErrors(fields)); // Clear errors
-      return true;
-    }
-
-    // Map lỗi Zod về đúng field
-    const newErrors = buildErrors(fields);
-    for (const issue of result.error.issues) {
-      const key = issue.path[0] as string;
-      if (key in newErrors) {
-        newErrors[key] = issue.message;
-      }
-    }
-    setErrors(newErrors);
-    return false;
-  };
-
-  const handleSubmit = () => {
-    if (!validate()) return;
-    onSubmit(values as T);
+  const onSubmitForm = (values: T) => {
+    onSubmit(values);
   };
 
   // ── Render fields ────────────────────────────────────────────────────────────
 
   const renderField = (field: FieldDef<T>) => {
     const key = field.key as string;
-    const value = values[key] ?? '';
-    const error = errors[key];
-    const hasError = Boolean(error);
+    const errorMessage = (errors[key]?.message as string) ?? '';
 
     const commonProps = {
       fullWidth: true,
@@ -181,37 +122,48 @@ const FormDialog = <T extends Record<string, unknown>>({
       label: field.label,
       placeholder: field.placeholder,
       disabled: field.disabled || loading,
-      error: hasError,
-      helperText: hasError ? error : ' ', // ' ' giữ chiều cao cố định, tránh layout shift
+      error: !!errorMessage,
+      helperText: errorMessage || ' ', // ' ' giữ chiều cao cố định
       required: field.required
     };
 
-    if (field.type === 'select') {
-      return (
-        <TextField
-          {...commonProps}
-          select
-          value={value}
-          onChange={(e) => handleChange(key, e.target.value)}
-        >
-          {field.options?.map((opt) => (
-            <MenuItem key={opt.value} value={opt.value}>
-              {opt.label}
-            </MenuItem>
-          ))}
-        </TextField>
-      );
-    }
-
     return (
-      <TextField
-        {...commonProps}
-        type={field.type ?? 'text'}
-        value={value}
-        onChange={(e) => {
-          const raw = e.target.value;
-          const val = field.type === 'number' && raw !== '' ? Number(raw) : raw;
-          handleChange(key, val);
+      <Controller
+        key={key}
+        name={key as Path<T>}
+        control={control}
+        render={({ field: rhfField }) => {
+          if (field.type === 'select') {
+            return (
+              <TextField
+                {...commonProps}
+                {...rhfField}
+                select
+                value={rhfField.value ?? ''}
+              >
+                {field.options?.map((opt) => (
+                  <MenuItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </MenuItem>
+                ))}
+              </TextField>
+            );
+          }
+
+          return (
+            <TextField
+              {...commonProps}
+              {...rhfField}
+              type={field.type ?? 'text'}
+              value={rhfField.value ?? ''}
+              onChange={(e) => {
+                const raw = e.target.value;
+                const val =
+                  field.type === 'number' && raw !== '' ? Number(raw) : raw;
+                rhfField.onChange(val);
+              }}
+            />
+          );
         }}
       />
     );
@@ -222,69 +174,69 @@ const FormDialog = <T extends Record<string, unknown>>({
   return (
     <Dialog
       open={open}
-      onClose={onClose}
+      onClose={loading ? undefined : onClose}
       fullWidth
       maxWidth="sm"
-      sx={{ borderRadius: 3 }}
+      slotProps={{ paper: { sx: { borderRadius: 3 } } }}
     >
-      {/* Header */}
-      <DialogTitle sx={{ px: 3, pt: 3, pb: 1.5 }}>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between'
-          }}
-        >
-          <Typography
-            sx={{ variant: 'h6', fontWeight: 700, color: 'text.primary' }}
+      <Box
+        component="form"
+        onSubmit={handleSubmit(onSubmitForm)}
+        sx={{ display: 'flex', flexDirection: 'column' }}
+      >
+        {/* Header */}
+        <DialogTitle sx={{ px: 3, pt: 3, pb: 1.5 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}
           >
-            {title}
-          </Typography>
-          <IconButton size="small" onClick={onClose} disabled={loading}>
-            <CloseOutlined fontSize="small" />
-          </IconButton>
-        </Box>
-      </DialogTitle>
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: 700, color: 'text.primary' }}
+            >
+              {title}
+            </Typography>
+            <IconButton size="small" onClick={onClose} disabled={loading}>
+              <CloseOutlined fontSize="small" />
+            </IconButton>
+          </Box>
+        </DialogTitle>
 
-      <Divider />
+        <Divider />
 
-      {/* Fields */}
-      <DialogContent sx={{ px: 3, py: 2.5 }}>
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column'
-          }}
-        >
-          {fields.map((field) => (
-            <Box key={field.key as string}>{renderField(field)}</Box>
-          ))}
-        </Box>
-      </DialogContent>
+        {/* Fields */}
+        <DialogContent sx={{ px: 3, py: 2.5 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            {fields.map((field) => renderField(field))}
+          </Box>
+        </DialogContent>
 
-      <Divider />
+        <Divider />
 
-      {/* Actions */}
-      <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
-        <Button
-          variant="outlined"
-          color="inherit"
-          onClick={onClose}
-          disabled={loading}
-          sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
-        >
-          Hủy
-        </Button>
-        <Button
-          variant="contained"
-          onClick={handleSubmit}
-          disabled={loading}
-          sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
-        >
-          {loading ? 'Đang lưu...' : submitLabel}
-        </Button>
-      </DialogActions>
+        {/* Actions */}
+        <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
+          <Button
+            variant="outlined"
+            color="inherit"
+            onClick={onClose}
+            disabled={loading}
+            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+          >
+            Hủy
+          </Button>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={loading}
+            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+          >
+            {loading ? 'Đang lưu...' : submitLabel}
+          </Button>
+        </DialogActions>
+      </Box>
     </Dialog>
   );
 };

@@ -18,7 +18,7 @@ export const authApi = {
     return response.data;
   },
 
-  logout() {
-    return api.post('/auth/logout');
+  logout(payload: { token: string }) {
+    return api.post('/auth/logout', payload);
   }
 };

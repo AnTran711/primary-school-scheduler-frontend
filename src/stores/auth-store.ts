@@ -9,15 +9,13 @@ export const useAuthStore = create<AuthStore>()(
       user: null,
       token: null,
       isAuthenticated: false,
-      isLoading: false,
 
       // Actions
       login: (user: User, token: string | null) => {
         set({
           user,
           token,
-          isAuthenticated: true,
-          isLoading: false
+          isAuthenticated: true
         });
       },
 
@@ -25,8 +23,7 @@ export const useAuthStore = create<AuthStore>()(
         set({
           user: null,
           token: null,
-          isAuthenticated: false,
-          isLoading: false
+          isAuthenticated: false
         });
       },
 
@@ -34,10 +31,6 @@ export const useAuthStore = create<AuthStore>()(
         set((state) => ({
           user: state.user ? { ...state.user, ...userData } : null
         }));
-      },
-
-      setLoading: (isLoading: boolean) => {
-        set({ isLoading });
       }
     }),
     {

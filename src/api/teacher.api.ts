@@ -1,18 +1,15 @@
 import { useTeacherStore } from '@/stores/teacher-store';
 import api from './axios-client';
+import type { ApiResponse } from '@/types/api-response';
+import type { Teacher } from '@/types/teacher';
 
 export const createTeacherAPI = async (teacherData: {
   name: string;
   numberOfLessonsPerWeek: number;
 }) => {
-  const res = await api.post('/teachers', teacherData);
+  const res: ApiResponse<Teacher> = await api.post('/teachers', teacherData);
 
-  const newTeacher = res.data;
-
-  const currentTeachers = useTeacherStore.getState().teachers;
-  currentTeachers.push(newTeacher);
-
-  useTeacherStore.getState().setTeachers(currentTeachers);
+  return res;
 };
 
 export const fetchTeachersAPI = async () => {
@@ -29,24 +26,16 @@ export const updateTeacherAPI = async (
     numberOfLessonsPerWeek: number;
   }
 ) => {
-  const res = await api.put(`/teachers/${teacherId}`, updateData);
-
-  const updatedTeacher = res.data;
-
-  const currentTeachers = useTeacherStore.getState().teachers;
-  const updatedTeachers = currentTeachers.map((teacher) =>
-    teacher.id === teacherId ? updatedTeacher : teacher
+  const res: ApiResponse<Teacher> = await api.put(
+    `/teachers/${teacherId}`,
+    updateData
   );
 
-  useTeacherStore.getState().setTeachers(updatedTeachers);
+  return res;
 };
 
 export const deleteTeacherAPI = async (teacherId: string) => {
-  await api.delete(`/teachers/${teacherId}`);
+  const res: ApiResponse<string> = await api.delete(`/teachers/${teacherId}`);
 
-  const currentTeachers = useTeacherStore.getState().teachers;
-  const updatedTeachers = currentTeachers.filter(
-    (teacher) => teacher.id !== teacherId
-  );
-  useTeacherStore.getState().setTeachers(updatedTeachers);
+  return res;
 };

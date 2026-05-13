@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { SearchOutlined, AddOutlined } from '@mui/icons-material';
 import { Button, InputAdornment, TextField } from '@mui/material';
 import type { Teacher } from '@/types/teacher';
@@ -9,78 +9,27 @@ import {
   teacherSchema,
   type TeacherFormValues
 } from '@/schemas/teacher.schema';
-
-// ─── Mock Data ─────────────────────────────────────────────────────────────────
-
-const MOCK_TEACHERS: Teacher[] = [
-  {
-    id: '1',
-    name: 'Hoàng Thị Thu Thủy',
-    numberOfLessonsPerWeek: 20
-  },
-  {
-    id: '2',
-    name: 'Nguyễn Văn Minh',
-    numberOfLessonsPerWeek: 18
-  },
-  {
-    id: '3',
-    name: 'Lê Thị Hoa',
-    numberOfLessonsPerWeek: 16
-  },
-  {
-    id: '4',
-    name: 'Trần Đức Dũng',
-    numberOfLessonsPerWeek: 14
-  },
-  {
-    id: '5',
-    name: 'Hoàng Thị Thu Thủy',
-    numberOfLessonsPerWeek: 20
-  },
-  {
-    id: '6',
-    name: 'Nguyễn Văn Minh',
-    numberOfLessonsPerWeek: 18
-  },
-  {
-    id: '7',
-    name: 'Lê Thị Hoa',
-    numberOfLessonsPerWeek: 16
-  },
-  {
-    id: '8',
-    name: 'Trần Đức Dũng',
-    numberOfLessonsPerWeek: 14
-  },
-  {
-    id: '9',
-    name: 'Hoàng Thị Thu Thủy',
-    numberOfLessonsPerWeek: 20
-  },
-  {
-    id: '10',
-    name: 'Nguyễn Văn Minh',
-    numberOfLessonsPerWeek: 18
-  },
-  {
-    id: '11',
-    name: 'Lê Thị Hoa',
-    numberOfLessonsPerWeek: 16
-  },
-  {
-    id: '12',
-    name: 'Trần Đức Dũng',
-    numberOfLessonsPerWeek: 14
-  }
-];
+import { useTeacherStore } from '@/stores/teacher-store';
+import {
+  createTeacherAPI,
+  deleteTeacherAPI,
+  updateTeacherAPI
+} from '@/api/teacher.api';
+import { toast } from 'react-toastify';
+import DeleteDialog from '@/components/ui/delete-dialog';
 
 // ─── Main Teacher Page ─────────────────────────────────────────────────────────
 
 const TeacherPage = () => {
   const [searchName, setSearchName] = useState('');
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [editTarget, setEditTarget] = useState<TeacherFormValues | undefined>();
+  const [editId, setEditId] = useState<string | undefined>();
+  const [deleteTarget, setDeleteTarget] = useState<Teacher | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const teachers = useTeacherStore((state) => state.teachers);
 
   const teacherColumns: ColumnDef<Teacher>[] = [
     {
@@ -107,28 +56,91 @@ const TeacherPage = () => {
     }
   ];
 
+  // Bật form dialog để thêm mới (form rỗng)
   const handleAdd = () => {
     setEditTarget(undefined); // form rỗng
     setOpen(true);
   };
 
+  // Bật form dialog để chỉnh sửa, điền sẵn data cũ vào form
   const handleEdit = (id: string) => {
-    console.log('Edit teacher:', id);
+    const teacher = teachers.find((t) => t.id === id);
+    if (!teacher) return;
+
+    setEditTarget(teacher); // điền form sẵn dữ liệu cũ
+    setEditId(id);
+
+    setOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    console.log('Delete teacher:', id);
+  // Mở dialog xác nhận xoá
+  const handleDelete = async (id: string) => {
+    const teacher = teachers.find((t) => t.id === id);
+
+    if (!teacher) return;
+    setDeleteTarget(teacher);
   };
 
-  const handleSubmit = (values: TeacherFormValues) => {
-    if (editTarget) {
-      console.log('Update teacher');
-    } else {
-      console.log('Create teacher:', values);
+  // Gọi API xoá, cập nhật lại state, đóng dialog
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    try {
+      setDeleteLoading(true);
+      const res = await deleteTeacherAPI(deleteTarget.id);
+
+      toast.success(res.message);
+
+      const updatedTeachers = teachers.filter(
+        (teacher) => teacher.id !== deleteTarget.id
+      );
+      useTeacherStore.getState().setTeachers(updatedTeachers);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setDeleteLoading(false);
+      setDeleteTarget(null);
     }
-
-    setOpen(false);
   };
+
+  // Gọi API tạo mới hoặc cập nhật, cập nhật lại state, đóng dialog
+  const handleSubmit = async (values: TeacherFormValues) => {
+    try {
+      let res;
+      setLoading(true);
+      if (editTarget && editId) {
+        res = await updateTeacherAPI(editId, values);
+        const updatedTeacher = res.data;
+
+        const updatedTeachers = teachers.map((teacher) =>
+          teacher.id === editId ? updatedTeacher : teacher
+        );
+
+        useTeacherStore.getState().setTeachers(updatedTeachers);
+      } else {
+        res = await createTeacherAPI(values);
+        const newTeacher = res.data;
+
+        const currentTeachers = [...teachers, newTeacher];
+
+        useTeacherStore.getState().setTeachers(currentTeachers);
+      }
+      console.log('API response', res);
+      toast.success(res.message);
+      setOpen(false);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Tìm kiếm theo tên (client-side, filter trên state đã có)
+  const filteredTeachers = useMemo(() => {
+    if (searchName.trim() === '') return teachers;
+    return teachers.filter((teacher) =>
+      teacher.name.toLowerCase().includes(searchName.toLowerCase())
+    );
+  }, [searchName, teachers]);
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
@@ -172,7 +184,7 @@ const TeacherPage = () => {
         {/* Table */}
         <DataTable
           columns={teacherColumns}
-          rows={MOCK_TEACHERS}
+          rows={filteredTeachers}
           onEdit={handleEdit}
           onDelete={handleDelete}
         ></DataTable>
@@ -186,6 +198,15 @@ const TeacherPage = () => {
         initialValues={editTarget}
         onSubmit={handleSubmit}
         onClose={() => setOpen(false)}
+        loading={loading}
+      />
+
+      <DeleteDialog
+        open={!!deleteTarget}
+        description={deleteTarget?.name}
+        loading={deleteLoading}
+        onConfirm={handleDeleteConfirm}
+        onClose={() => setDeleteTarget(null)}
       />
     </div>
   );

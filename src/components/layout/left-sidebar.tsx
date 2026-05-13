@@ -1,11 +1,15 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
   CalendarMonth,
   People,
   AccountBalance,
   Class,
-  MenuBook
+  MenuBook,
+  LogoutOutlined
 } from '@mui/icons-material';
+import { Avatar, IconButton, Tooltip } from '@mui/material';
+import { useAuthStore } from '@/stores/auth-store';
+import { authApi } from '@/api/auth.api';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -33,7 +37,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Môn học', icon: <MenuBook fontSize="small" />, path: '/subjects' }
 ];
 
-// ─── NavItem Component ─────────────────────────────────────────────────────────
+// ─── SidebarNavItem ────────────────────────────────────────────────────────────
 
 const SidebarNavItem = ({ item }: { item: NavItem }) => (
   <NavLink
@@ -49,20 +53,75 @@ const SidebarNavItem = ({ item }: { item: NavItem }) => (
   >
     {({ isActive }) => (
       <>
-        {/* Active indicator bar */}
         {isActive && (
           <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-teal-400" />
         )}
-
-        {/* Icon */}
         <span className={isActive ? 'text-teal-400' : ''}>{item.icon}</span>
-
-        {/* Label */}
         <span>{item.label}</span>
       </>
     )}
   </NavLink>
 );
+
+// ─── UserSection ───────────────────────────────────────────────────────────────
+
+const UserSection = () => {
+  const navigate = useNavigate();
+  const user = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
+
+  const handleLogout = () => {
+    const token = useAuthStore.getState().token;
+    authApi.logout({ token: token ?? '' });
+
+    logout();
+    navigate('/login', { replace: true });
+  };
+
+  const avatarLetter = user?.username?.charAt(0).toUpperCase() ?? 'U';
+
+  return (
+    <div className="flex items-center gap-2 px-3 py-3">
+      {/* Avatar */}
+      <Avatar
+        sx={{
+          width: 32,
+          height: 32,
+          fontSize: '0.8125rem',
+          fontWeight: 600,
+          bgcolor: 'rgba(45,212,191,0.15)',
+          color: '#2dd4bf',
+          flexShrink: 0
+        }}
+      >
+        {avatarLetter}
+      </Avatar>
+
+      {/* Username */}
+      <span className="flex-1 truncate text-sm font-medium text-slate-300">
+        {user?.username ?? 'Người dùng'}
+      </span>
+
+      {/* Logout button */}
+      <Tooltip title="Đăng xuất" placement="right">
+        <IconButton
+          size="small"
+          onClick={handleLogout}
+          sx={{
+            color: 'rgba(148,163,184,1)',
+            flexShrink: 0,
+            '&:hover': {
+              bgcolor: 'rgba(239,68,68,0.1)',
+              color: '#ef4444'
+            }
+          }}
+        >
+          <LogoutOutlined sx={{ fontSize: 18 }} />
+        </IconButton>
+      </Tooltip>
+    </div>
+  );
+};
 
 // ─── LeftSidebar ───────────────────────────────────────────────────────────────
 
@@ -78,11 +137,17 @@ const LeftSidebar = () => {
 
       <div className="mx-4 h-px bg-white/10" />
 
+      {/* Navigation */}
       <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4">
         {NAV_ITEMS.map((item) => (
           <SidebarNavItem key={item.path} item={item} />
         ))}
       </nav>
+
+      <div className="mx-4 h-px bg-white/10" />
+
+      {/* User section */}
+      <UserSection />
     </aside>
   );
 };

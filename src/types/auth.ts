@@ -5,7 +5,7 @@ export interface LoginPayload {
 
 export interface LoginResponse {
   token: string;
-  userData: User;
+  user: User;
 }
 
 export type UserRole = 'ADMIN' | 'USER';
@@ -20,14 +20,12 @@ export interface AuthState {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
-  isLoading: boolean;
 }
 
 export interface AuthActions {
   login: (user: User, token: string | null) => void;
   logout: () => void;
   updateUser: (user: Partial<User>) => void;
-  setLoading: (isLoading: boolean) => void;
 }
 
 export type AuthStore = AuthState & AuthActions;
