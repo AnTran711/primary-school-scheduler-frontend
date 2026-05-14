@@ -5,6 +5,7 @@ import LoginPage from '@/pages/login-page';
 import ProtectedRoute from '@/components/protected-route';
 import BranchSchoolPage from '@/pages/branch-school-page';
 import SubjectPage from '@/pages/subject-page';
+import SchoolClassPage from '@/pages/school-class-page';
 
 const router = createBrowserRouter([
   // ── Public routes ──────────────────────────────────────────────────────────
@@ -36,9 +37,11 @@ const router = createBrowserRouter([
           {
             path: '/subjects',
             element: <SubjectPage />
+          },
+          {
+            path: '/classes',
+            element: <SchoolClassPage />
           }
-          // Thêm các route khác vào đây
-          // { path: '/classes',  element: <ClassPage />   },
         ]
       }
     ]

@@ -3,7 +3,7 @@ export interface SchoolClass {
   name: string;
   branchSchoolId: string;
   branchSchoolName: string;
-  homerommTeacherId: string;
+  homeroomTeacherId: string;
   homeroomTeacherName: string;
 }
 

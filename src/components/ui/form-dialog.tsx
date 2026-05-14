@@ -36,10 +36,10 @@ export interface SelectOption {
 export interface FieldDef<T> {
   key: keyof T;
   label: string;
-  type?: FieldType;
+  type?: FieldType; // mặc định 'text'
   placeholder?: string;
   required?: boolean;
-  options?: SelectOption[];
+  options?: SelectOption[]; // chỉ dùng khi type === 'select'
   disabled?: boolean;
 }
 
