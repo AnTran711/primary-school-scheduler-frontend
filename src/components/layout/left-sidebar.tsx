@@ -5,7 +5,8 @@ import {
   AccountBalance,
   Class,
   MenuBook,
-  LogoutOutlined
+  LogoutOutlined,
+  AssignmentOutlined
 } from '@mui/icons-material';
 import { Avatar, IconButton, Tooltip } from '@mui/material';
 import { useAuthStore } from '@/stores/auth-store';
@@ -34,7 +35,12 @@ const NAV_ITEMS: NavItem[] = [
     path: '/branch-schools'
   },
   { label: 'Lớp học', icon: <Class fontSize="small" />, path: '/classes' },
-  { label: 'Môn học', icon: <MenuBook fontSize="small" />, path: '/subjects' }
+  { label: 'Môn học', icon: <MenuBook fontSize="small" />, path: '/subjects' },
+  {
+    label: 'Phân môn theo lớp',
+    icon: <AssignmentOutlined fontSize="small" />,
+    path: '/class-subjects'
+  }
 ];
 
 // ─── SidebarNavItem ────────────────────────────────────────────────────────────

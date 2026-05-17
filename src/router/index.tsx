@@ -6,6 +6,7 @@ import ProtectedRoute from '@/components/protected-route';
 import BranchSchoolPage from '@/pages/branch-school-page';
 import SubjectPage from '@/pages/subject-page';
 import SchoolClassPage from '@/pages/school-class-page';
+import ClassSubjectPage from '@/pages/class-subject-page';
 
 const router = createBrowserRouter([
   // ── Public routes ──────────────────────────────────────────────────────────
@@ -41,6 +42,10 @@ const router = createBrowserRouter([
           {
             path: '/classes',
             element: <SchoolClassPage />
+          },
+          {
+            path: '/class-subjects',
+            element: <ClassSubjectPage />
           }
         ]
       }

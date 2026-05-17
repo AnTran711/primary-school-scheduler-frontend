@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Box,
@@ -25,7 +25,7 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   const {
-    register,
+    control,
     handleSubmit,
     formState: { errors, isSubmitting }
   } = useForm<LoginFormValues>({
@@ -83,47 +83,59 @@ const LoginPage = () => {
         <Divider sx={{ mb: 3 }} />
 
         {/* Username */}
-        <TextField
-          {...register('username')}
-          fullWidth
-          size="small"
-          label="Tên đăng nhập"
-          disabled={isSubmitting}
-          error={!!errors.username}
-          helperText={errors.username?.message ?? ' '}
-          sx={{ mb: 1, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+        <Controller
+          name="username"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              fullWidth
+              size="small"
+              label="Tên đăng nhập"
+              disabled={isSubmitting}
+              error={!!errors.username}
+              helperText={errors.username?.message ?? ' '}
+              sx={{ mb: 1, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+            />
+          )}
         />
 
         {/* Password */}
-        <TextField
-          {...register('password')}
-          fullWidth
-          size="small"
-          label="Mật khẩu"
-          type={showPassword ? 'text' : 'password'}
-          disabled={isSubmitting}
-          error={!!errors.password}
-          helperText={errors.password?.message ?? ' '}
-          sx={{ mb: 3, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-          slotProps={{
-            input: {
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    size="small"
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    edge="end"
-                  >
-                    {showPassword ? (
-                      <VisibilityOffOutlined fontSize="small" />
-                    ) : (
-                      <VisibilityOutlined fontSize="small" />
-                    )}
-                  </IconButton>
-                </InputAdornment>
-              )
-            }
-          }}
+        <Controller
+          name="password"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              fullWidth
+              size="small"
+              label="Mật khẩu"
+              type={showPassword ? 'text' : 'password'}
+              disabled={isSubmitting}
+              error={!!errors.password}
+              helperText={errors.password?.message ?? ' '}
+              sx={{ mb: 3, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        size="small"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        edge="end"
+                      >
+                        {showPassword ? (
+                          <VisibilityOffOutlined fontSize="small" />
+                        ) : (
+                          <VisibilityOutlined fontSize="small" />
+                        )}
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }
+              }}
+            />
+          )}
         />
 
         {/* Submit */}
