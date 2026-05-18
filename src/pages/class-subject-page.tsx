@@ -19,7 +19,6 @@ import { toast } from 'react-toastify';
 import { useSchoolClassStore } from '@/stores/school-class-store';
 import DeleteDialog from '@/components/ui/delete-dialog';
 import type { ClassSubjectFormValues } from '@/schemas/class-subject.schema';
-import ClassSubjectCard from '@/components/ui/class-subject-card';
 import ClassSubjectFormDialog from '@/components/ui/class-subject-form-dialog';
 import type { ClassSubject } from '@/types/class-subject';
 import {
@@ -28,6 +27,8 @@ import {
   fetchClassSubjectsByClassAPI,
   updateClassSubjectAPI
 } from '@/api/class-subject.api';
+import type { ColumnDef } from '@/components/ui/data-table';
+import DataTable from '@/components/ui/data-table';
 
 const ClassSubjectPage = () => {
   const schoolClasses = useSchoolClassStore((state) => state.schoolClasses);
@@ -45,6 +46,18 @@ const ClassSubjectPage = () => {
   // Delete dialog state
   const [deleteTarget, setDeleteTarget] = useState<ClassSubject | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const classSubjectColumns: ColumnDef<ClassSubject>[] = [
+    {
+      key: 'subjectName',
+      label: 'Tên môn học'
+    },
+    {
+      key: 'lessonsPerWeek',
+      label: 'Số tiết mỗi tuần',
+      align: 'center'
+    }
+  ];
 
   // Load ClassSubject khi chọn lớp
   useEffect(() => {
@@ -87,8 +100,11 @@ const ClassSubjectPage = () => {
     setFormOpen(true);
   };
 
-  const handleEdit = (cs: ClassSubject) => {
-    setEditTarget(cs);
+  const handleEdit = (id: string) => {
+    const classSubject = classSubjects.find((cs) => cs.id === id);
+    if (!classSubject) return;
+
+    setEditTarget(classSubject);
     setFormOpen(true);
   };
 
@@ -118,6 +134,13 @@ const ClassSubjectPage = () => {
     } finally {
       setFormLoading(false);
     }
+  };
+
+  const handleDelete = (id: string) => {
+    const classSubject = classSubjects.find((cs) => cs.id === id);
+    if (!classSubject) return;
+
+    setDeleteTarget(classSubject);
   };
 
   const handleDeleteConfirm = async () => {
@@ -280,31 +303,13 @@ const ClassSubjectPage = () => {
               </Box>
             </Box>
 
-            {/* Grid cards */}
-            {filteredClassSubjects.length === 0 && searchName ? (
-              <Box sx={{ py: 8, textAlign: 'center' }}>
-                <Typography color="text.disabled">
-                  Không tìm thấy môn học nào khớp với "{searchName}"
-                </Typography>
-              </Box>
-            ) : (
-              <Box
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-                  gap: 2
-                }}
-              >
-                {filteredClassSubjects.map((cs) => (
-                  <ClassSubjectCard
-                    key={cs.id}
-                    classSubject={cs}
-                    onEdit={handleEdit}
-                    onDelete={setDeleteTarget}
-                  />
-                ))}
-              </Box>
-            )}
+            {/* Data table */}
+            <DataTable
+              columns={classSubjectColumns}
+              rows={filteredClassSubjects}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
           </>
         )}
       </main>

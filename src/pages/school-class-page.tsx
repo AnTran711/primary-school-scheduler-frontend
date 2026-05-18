@@ -103,7 +103,7 @@ const SchoolClassPage = () => {
   };
 
   // Mở dialog xác nhận xoá
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     const schoolClass = schoolClasses.find((sc) => sc.id === id);
 
     if (!schoolClass) return;

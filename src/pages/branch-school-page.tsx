@@ -66,7 +66,7 @@ const BranchSchoolPage = () => {
   };
 
   // Mở dialog xác nhận xoá
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     const branchSchool = branchSchools.find((bs) => bs.id === id);
 
     if (!branchSchool) return;

@@ -74,7 +74,7 @@ const TeacherPage = () => {
   };
 
   // Mở dialog xác nhận xoá
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     const teacher = teachers.find((t) => t.id === id);
 
     if (!teacher) return;

@@ -64,7 +64,7 @@ const SubjectPage = () => {
   };
 
   // Mở dialog xác nhận xoá
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     const subject = subjects.find((s) => s.id === id);
 
     if (!subject) return;
