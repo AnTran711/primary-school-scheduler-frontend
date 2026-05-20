@@ -6,7 +6,8 @@ import {
   Class,
   MenuBook,
   LogoutOutlined,
-  AssignmentOutlined
+  AssignmentOutlined,
+  AssignmentInd
 } from '@mui/icons-material';
 import { Avatar, IconButton, Tooltip } from '@mui/material';
 import { useAuthStore } from '@/stores/auth-store';
@@ -40,6 +41,11 @@ const NAV_ITEMS: NavItem[] = [
     label: 'Phân môn theo lớp',
     icon: <AssignmentOutlined fontSize="small" />,
     path: '/class-subjects'
+  },
+  {
+    label: 'Phân công giảng dạy',
+    icon: <AssignmentInd fontSize="small" />,
+    path: '/teaching-assignments'
   }
 ];
 

@@ -7,6 +7,7 @@ import BranchSchoolPage from '@/pages/branch-school-page';
 import SubjectPage from '@/pages/subject-page';
 import SchoolClassPage from '@/pages/school-class-page';
 import ClassSubjectPage from '@/pages/class-subject-page';
+import LessonPage from '@/pages/lesson-page';
 
 const router = createBrowserRouter([
   // ── Public routes ──────────────────────────────────────────────────────────
@@ -46,6 +47,10 @@ const router = createBrowserRouter([
           {
             path: '/class-subjects',
             element: <ClassSubjectPage />
+          },
+          {
+            path: '/teaching-assignments',
+            element: <LessonPage />
           }
         ]
       }
