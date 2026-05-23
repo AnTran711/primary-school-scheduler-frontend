@@ -9,7 +9,8 @@ import {
   IconButton,
   Tooltip,
   Box,
-  Typography
+  Typography,
+  TableFooter
 } from '@mui/material';
 import {
   EditOutlined,
@@ -49,7 +50,7 @@ const EmptyState = ({ text }: { text: string }) => (
     }}
   >
     <InboxOutlined sx={{ fontSize: 48 }} />
-    <Typography variant="body2" color="text.disabled">
+    <Typography variant="body2" sx={{ color: 'text.disabled' }}>
       {text}
     </Typography>
   </Box>
@@ -143,6 +144,64 @@ const DataTable = <T extends { id: string }>({
             ))
           )}
         </TableBody>
+
+        <TableFooter>
+          <TableRow>
+            <TableCell
+              colSpan={totalCols}
+              sx={{
+                borderTop: '1px solid',
+                borderColor: 'divider',
+                borderBottom: 0,
+                py: 1.5,
+                px: 2,
+                bgcolor: 'grey.50'
+              }}
+            >
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'flex-end',
+                  gap: 1
+                }}
+              >
+                <Typography
+                  variant="caption"
+                  sx={{ fontWeight: 500, color: 'text.secondary' }}
+                >
+                  Tổng cộng
+                </Typography>
+                <Box
+                  sx={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    px: 1.25,
+                    py: 0.25,
+                    borderRadius: 1,
+                    bgcolor: 'primary.50',
+                    border: '1px solid',
+                    borderColor: 'primary.100'
+                  }}
+                >
+                  <Typography
+                    variant="caption"
+                    sx={{ fontWeight: 700, color: 'primary.main' }}
+                  >
+                    {rows.length}
+                  </Typography>
+                </Box>
+                <Typography
+                  variant="caption"
+                  sx={{ fontWeight: 500, color: 'text.secondary' }}
+                >
+                  bản ghi
+                </Typography>
+              </Box>
+            </TableCell>
+          </TableRow>
+        </TableFooter>
       </Table>
     </TableContainer>
   );

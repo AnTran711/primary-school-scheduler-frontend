@@ -39,3 +39,19 @@ export const deleteTeacherAPI = async (teacherId: string) => {
 
   return res;
 };
+
+// ─── Teacher Availability (dùng cho dropdown ở trang LessonPage — loại trừ classSubject hiện tại) ─
+export const fetchTeacherAvailabilityAPI = async (classSubjectId: string) => {
+  const res = await api.get(
+    `/teachers/availability?classSubjectId=${classSubjectId}`
+  );
+
+  return res;
+};
+
+// ─── Teacher Workload (dùng cho dialog ở trang LessonPage — toàn bộ tiết đã phân công) ───────────
+export const fetchTeacherWorkloadAPI = async () => {
+  const res = await api.get('/teachers/workload');
+
+  return res;
+};

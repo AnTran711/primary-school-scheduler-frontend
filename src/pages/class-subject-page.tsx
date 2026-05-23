@@ -169,12 +169,11 @@ const ClassSubjectPage = () => {
         <Box sx={{ mb: 4 }}>
           <Typography
             variant="h5"
-            sx={{ fontWeight: 700 }}
-            color="text.primary"
+            sx={{ fontWeight: 700, color: 'text.primary' }}
           >
             Quản lý môn học theo lớp
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+          <Typography variant="body2" sx={{ mt: 0.5, color: 'text.secondary' }}>
             Phân công môn học và số tiết mỗi tuần cho từng lớp học
           </Typography>
         </Box>
@@ -254,7 +253,7 @@ const ClassSubjectPage = () => {
             <BookOutlined
               sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }}
             />
-            <Typography color="text.disabled">
+            <Typography sx={{ color: 'text.disabled' }}>
               Chọn lớp học để xem và quản lý môn học
             </Typography>
           </Box>
@@ -280,7 +279,7 @@ const ClassSubjectPage = () => {
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                   <strong>{selectedClass?.name}</strong> —{' '}
                   {classSubjects.length} môn học,{' '}
                   {classSubjects.reduce(

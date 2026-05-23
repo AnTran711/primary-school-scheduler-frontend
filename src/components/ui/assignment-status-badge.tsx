@@ -1,43 +1,47 @@
+import { Chip } from '@mui/material';
 import {
   CheckCircleOutlined,
   RadioButtonUncheckedOutlined,
   WarningAmberOutlined
 } from '@mui/icons-material';
-import { Chip } from '@mui/material';
+
+interface AssignmentStatusBadgeProps {
+  assignedLessons: number;
+  totalLessons: number;
+}
 
 const AssignmentStatusBadge = ({
-  assigned,
-  total
-}: {
-  assigned: number;
-  total: number;
-}) => {
-  if (assigned === 0)
+  assignedLessons,
+  totalLessons
+}: AssignmentStatusBadgeProps) => {
+  if (assignedLessons === 0) {
     return (
       <Chip
-        icon={<RadioButtonUncheckedOutlined sx={{ fontSize: 14 }} />}
+        icon={<RadioButtonUncheckedOutlined sx={{ fontSize: 13 }} />}
         label="Chưa phân công"
         size="small"
         sx={{ bgcolor: 'grey.100', color: 'text.disabled', fontSize: 11 }}
       />
     );
+  }
 
-  if (assigned < total)
+  if (assignedLessons < totalLessons) {
     return (
       <Chip
-        icon={<WarningAmberOutlined sx={{ fontSize: 14 }} />}
-        label={`${assigned}/${total} tiết`}
+        icon={<WarningAmberOutlined sx={{ fontSize: 13 }} />}
+        label={`${assignedLessons}/${totalLessons} tiết`}
         size="small"
         color="warning"
         variant="outlined"
         sx={{ fontSize: 11 }}
       />
     );
+  }
 
   return (
     <Chip
-      icon={<CheckCircleOutlined sx={{ fontSize: 14 }} />}
-      label={`${assigned}/${total} tiết`}
+      icon={<CheckCircleOutlined sx={{ fontSize: 13 }} />}
+      label={`${assignedLessons}/${totalLessons} tiết`}
       size="small"
       color="success"
       variant="outlined"

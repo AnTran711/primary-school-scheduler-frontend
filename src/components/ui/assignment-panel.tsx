@@ -1,16 +1,4 @@
-import {
-  fetchLessonByClassSubjectAPI,
-  saveLessonAssignmentAPI
-} from '@/api/lesson.api';
-import { useTeacherStore } from '@/stores/teacher-store';
-import type { ClassSubject } from '@/types/class-subject';
-import type { AssignmentRow, TeacherAssignment } from '@/types/lesson';
-import {
-  AddOutlined,
-  ArrowBackOutlined,
-  DeleteOutlined,
-  SaveOutlined
-} from '@mui/icons-material';
+import { useEffect, useState } from 'react';
 import {
   Box,
   Button,
@@ -23,45 +11,66 @@ import {
   Tooltip,
   Typography
 } from '@mui/material';
-import { useEffect, useState } from 'react';
+import {
+  AddOutlined,
+  ArrowBackOutlined,
+  DeleteOutlined,
+  SaveOutlined
+} from '@mui/icons-material';
 import { toast } from 'react-toastify';
-
-interface AssignmentPanelProps {
-  classSubject: ClassSubject;
-  onBack: () => void;
-}
+import type { AssignmentRow, TeacherAvailability } from '@/types/lesson';
+import type { ClassSubject } from '@/types/class-subject';
+import {
+  fetchLessonsByClassSubjectAPI,
+  saveLessonAssignmentAPI
+} from '@/api/lesson.api';
+import { fetchTeacherAvailabilityAPI } from '@/api/teacher.api';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const rowsEqual = (a: AssignmentRow[], b: AssignmentRow[]): boolean =>
+  JSON.stringify(a) === JSON.stringify(b);
 
 const getTotalAssigned = (rows: AssignmentRow[]) =>
   rows.reduce((sum, r) => sum + (Number(r.lessonCount) || 0), 0);
 
-// ─── Components ───────────────────────────────────────────────────────────
+// ─── Props ────────────────────────────────────────────────────────────────────
 
-const AssignmentPanel = ({ classSubject, onBack }: AssignmentPanelProps) => {
-  const teachers = useTeacherStore((state) => state.teachers);
+interface AssignmentPanelProps {
+  classSubject: ClassSubject;
+  onBack: () => void;
+  onSaveSuccess: (classSubjectId: string, assignments: AssignmentRow[]) => void;
+}
 
+// ─── Component ────────────────────────────────────────────────────────────────
+
+const AssignmentPanel = ({
+  classSubject,
+  onBack,
+  onSaveSuccess
+}: AssignmentPanelProps) => {
   const [rows, setRows] = useState<AssignmentRow[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
+  const [initialRows, setInitialRows] = useState<AssignmentRow[]>([]);
+  const [teacherAvailability, setTeacherAvailability] = useState<
+    TeacherAvailability[]
+  >([]);
+  const [loadingData, setLoadingData] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Load phân công hiện có
+  // Load dữ liệu khi classSubject thay đổi
   useEffect(() => {
     const load = async () => {
       setLoadingData(true);
       try {
-        const res = await fetchLessonByClassSubjectAPI(classSubject.id);
-        if (res.data) {
-          setRows(
-            res.data.assignments.map((a: TeacherAssignment) => ({
-              teacherId: a.teacherId,
-              lessonCount: a.lessonCount,
-              isEditing: false
-            }))
-          );
-        } else {
-          setRows([]);
-        }
+        const [lessonDataRes, availabilityDataRes] = await Promise.all([
+          fetchLessonsByClassSubjectAPI(classSubject.id),
+          fetchTeacherAvailabilityAPI(classSubject.id)
+        ]);
+
+        const loaded = lessonDataRes?.data?.assignments ?? [];
+        setRows(loaded);
+        setInitialRows(loaded);
+        setTeacherAvailability(availabilityDataRes?.data ?? []);
       } finally {
         setLoadingData(false);
       }
@@ -69,23 +78,27 @@ const AssignmentPanel = ({ classSubject, onBack }: AssignmentPanelProps) => {
     load();
   }, [classSubject.id]);
 
+  // ── Computed values ──────────────────────────────────────────────────────────
+
   const totalAssigned = getTotalAssigned(rows);
   const remaining = classSubject.lessonsPerWeek - totalAssigned;
   const isComplete = totalAssigned === classSubject.lessonsPerWeek;
   const isOver = totalAssigned > classSubject.lessonsPerWeek;
+  const isDirty = !rowsEqual(rows, initialRows); // có thay đổi so với lúc load
 
-  // Danh sách giáo viên chưa được chọn trong các row khác
-  const getAvailableTeachers = (currentTeacherId: string) =>
-    teachers.filter(
+  // Giáo viên chưa được chọn trong các row khác (để tránh duplicate)
+  const getAvailableTeachers = (currentRowIdx: number) =>
+    teacherAvailability.filter(
       (t) =>
-        t.id === currentTeacherId || !rows.some((r) => r.teacherId === t.id)
+        !rows.some(
+          (r, idx) => idx !== currentRowIdx && r.teacherId === t.teacherId
+        )
     );
 
+  // ── Handlers ────────────────────────────────────────────────────────────────
+
   const handleAddRow = () => {
-    setRows((prev) => [
-      ...prev,
-      { teacherId: '', lessonCount: 1, isEditing: true }
-    ]);
+    setRows((prev) => [...prev, { teacherId: '', lessonCount: 1 }]);
   };
 
   const handleRemoveRow = (idx: number) => {
@@ -108,6 +121,10 @@ const AssignmentPanel = ({ classSubject, onBack }: AssignmentPanelProps) => {
 
   const handleSave = async () => {
     // Validate
+    if (rows.some((r) => !r.teacherId)) {
+      toast.error('Vui lòng chọn giáo viên cho tất cả các dòng');
+      return;
+    }
     if (!isComplete) {
       toast.error(
         remaining > 0
@@ -116,28 +133,42 @@ const AssignmentPanel = ({ classSubject, onBack }: AssignmentPanelProps) => {
       );
       return;
     }
-    if (rows.some((r) => !r.teacherId)) {
-      toast.error('Vui lòng chọn giáo viên cho tất cả các dòng');
-      return;
+
+    // Validate không vượt quá số tiết của giáo viên
+    for (const row of rows) {
+      const teacher = teacherAvailability.find(
+        (t) => t.teacherId === row.teacherId
+      );
+      if (!teacher) continue;
+      const remaining =
+        teacher.numberOfLessonsPerWeek - teacher.assignedLessons;
+      if (row.lessonCount > remaining) {
+        toast.error(
+          `Giáo viên ${teacher.teacherName} chỉ còn ${remaining} tiết, không thể phân công ${row.lessonCount} tiết`
+        );
+        return;
+      }
     }
 
     try {
       setSaving(true);
       const res = await saveLessonAssignmentAPI({
         classSubjectId: classSubject.id,
-        assignments: rows.map((r) => ({
-          teacherId: r.teacherId,
-          lessonCount: r.lessonCount
-        }))
+        assignments: rows
       });
-
       toast.success(res.message);
-    } catch (error) {
-      console.error(error);
+
+      // Cập nhật initialRows để isDirty = false sau khi lưu
+      setInitialRows([...rows]);
+
+      // Thông báo lên LessonPage để cập nhật lessonMap
+      onSaveSuccess(classSubject.id, rows);
     } finally {
       setSaving(false);
     }
   };
+
+  // ── Render ──────────────────────────────────────────────────────────────────
 
   if (loadingData) {
     return (
@@ -160,7 +191,7 @@ const AssignmentPanel = ({ classSubject, onBack }: AssignmentPanelProps) => {
           <Typography variant="h6" sx={{ fontWeight: 700 }}>
             {classSubject.subjectName}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             {classSubject.lessonsPerWeek} tiết/tuần
           </Typography>
         </Box>
@@ -171,11 +202,11 @@ const AssignmentPanel = ({ classSubject, onBack }: AssignmentPanelProps) => {
         variant="outlined"
         sx={{ borderRadius: 2, overflow: 'hidden', mb: 2 }}
       >
-        {/* Table header */}
+        {/* Header */}
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: '1fr 120px 48px',
+            gridTemplateColumns: '1fr 130px 48px',
             gap: 2,
             px: 2,
             py: 1.25,
@@ -184,97 +215,132 @@ const AssignmentPanel = ({ classSubject, onBack }: AssignmentPanelProps) => {
             borderColor: 'divider'
           }}
         >
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{ textTransform: 'uppercase', fontWeight: 600 }}
-          >
-            Giáo viên
-          </Typography>
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{
-              textTransform: 'uppercase',
-              fontWeight: 600,
-              textAlign: 'center'
-            }}
-          >
-            Số tiết
-          </Typography>
+          {['Giáo viên', 'Số tiết', ''].map((label) => (
+            <Typography
+              key={label}
+              variant="caption"
+              sx={{
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                textAlign: label === 'Số tiết' ? 'center' : 'left',
+                color: 'text.secondary'
+              }}
+            >
+              {label}
+            </Typography>
+          ))}
         </Box>
 
         {/* Rows */}
         {rows.length === 0 ? (
-          <Box sx={{ py: 4, textAlign: 'center' }}>
-            <Typography variant="body2" color="text.disabled">
+          <Box sx={{ py: 5, textAlign: 'center' }}>
+            <Typography variant="body2" sx={{ color: 'text.disabled' }}>
               Chưa có giáo viên nào được phân công
             </Typography>
           </Box>
         ) : (
-          rows.map((row, idx) => (
-            <Box
-              key={idx}
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 120px 48px',
-                gap: 2,
-                px: 2,
-                py: 1.25,
-                alignItems: 'center',
-                borderBottom: idx < rows.length - 1 ? '1px solid' : 'none',
-                borderColor: 'divider'
-              }}
-            >
-              {/* Teacher select */}
-              <TextField
-                select
-                size="small"
-                value={row.teacherId}
-                onChange={(
-                  e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>
-                ) => handleChangeTeacher(idx, e.target.value)}
-                placeholder="Chọn giáo viên"
-              >
-                {getAvailableTeachers(row.teacherId).map((t) => (
-                  <MenuItem key={t.id} value={t.id}>
-                    {t.name}
-                  </MenuItem>
-                ))}
-              </TextField>
+          rows.map((row, idx) => {
+            const availableTeachers = getAvailableTeachers(idx);
+            const selectedTeacher = teacherAvailability.find(
+              (t) => t.teacherId === row.teacherId
+            );
 
-              {/* Lesson count input */}
-              <TextField
-                size="small"
-                type="number"
-                value={row.lessonCount}
-                onChange={(
-                  e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>
-                ) => handleChangeLessonCount(idx, e.target.value)}
-                slotProps={{
-                  htmlInput: {
-                    min: 1,
-                    max: classSubject.lessonsPerWeek,
-                    style: { textAlign: 'center' }
-                  }
+            return (
+              <Box
+                key={idx}
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 130px 48px',
+                  gap: 2,
+                  px: 2,
+                  py: 1.25,
+                  alignItems: 'center',
+                  borderBottom: idx < rows.length - 1 ? '1px solid' : 'none',
+                  borderColor: 'divider'
                 }}
-              />
-
-              {/* Delete */}
-              <Tooltip title="Xóa">
-                <IconButton
+              >
+                {/* Teacher select */}
+                <TextField
+                  select
                   size="small"
-                  onClick={() => handleRemoveRow(idx)}
-                  sx={{
-                    color: 'text.disabled',
-                    '&:hover': { color: 'error.main' }
-                  }}
+                  value={row.teacherId}
+                  onChange={(e) => handleChangeTeacher(idx, e.target.value)}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
                 >
-                  <DeleteOutlined fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </Box>
-          ))
+                  {availableTeachers.map((t) => {
+                    const remaining =
+                      t.numberOfLessonsPerWeek - t.assignedLessons;
+                    return (
+                      <MenuItem
+                        key={t.teacherId}
+                        value={t.teacherId}
+                        disabled={remaining <= 0}
+                      >
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            width: '100%',
+                            gap: 2
+                          }}
+                        >
+                          <Typography variant="body2">
+                            {t.teacherName}
+                          </Typography>
+                          {/* Không hiển thị số tiết còn lại của giáo viên đang được chọn */}
+                          {t.teacherId !== selectedTeacher?.teacherId && (
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                fontWeight: 600,
+                                color:
+                                  remaining > 0 ? 'success.main' : 'error.main'
+                              }}
+                            >
+                              còn {remaining} tiết
+                            </Typography>
+                          )}
+                        </Box>
+                      </MenuItem>
+                    );
+                  })}
+                </TextField>
+
+                {/* Lesson count */}
+                <TextField
+                  size="small"
+                  type="number"
+                  value={row.lessonCount}
+                  onChange={(e) => handleChangeLessonCount(idx, e.target.value)}
+                  slotProps={{
+                    htmlInput: {
+                      min: 1,
+                      max: selectedTeacher
+                        ? selectedTeacher.numberOfLessonsPerWeek -
+                          selectedTeacher.assignedLessons
+                        : classSubject.lessonsPerWeek,
+                      style: { textAlign: 'center' }
+                    }
+                  }}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
+                />
+
+                {/* Delete */}
+                <Tooltip title="Xóa">
+                  <IconButton
+                    size="small"
+                    onClick={() => handleRemoveRow(idx)}
+                    sx={{
+                      color: 'text.disabled',
+                      '&:hover': { color: 'error.main' }
+                    }}
+                  >
+                    <DeleteOutlined fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            );
+          })
         )}
 
         {/* Footer tổng tiết */}
@@ -282,7 +348,7 @@ const AssignmentPanel = ({ classSubject, onBack }: AssignmentPanelProps) => {
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: '1fr 120px 48px',
+            gridTemplateColumns: '1fr 130px 48px',
             gap: 2,
             px: 2,
             py: 1.25,
@@ -296,27 +362,26 @@ const AssignmentPanel = ({ classSubject, onBack }: AssignmentPanelProps) => {
         >
           <Typography
             variant="body2"
-            color="text.secondary"
-            sx={{ fontWeight: 600 }}
+            sx={{ fontWeight: 600, color: 'text.secondary' }}
           >
             Tổng
           </Typography>
           <Typography
             variant="body2"
-            color={
-              isOver
+            sx={{
+              fontWeight: 700,
+              textAlign: 'center',
+              color: isOver
                 ? 'error.main'
                 : isComplete
                   ? 'success.main'
                   : 'text.primary'
-            }
-            sx={{ fontWeight: 600, textAlign: 'center' }}
+            }}
           >
             {totalAssigned}/{classSubject.lessonsPerWeek}
-            {isOver && ' (vượt quá)'}
+            {isOver && ` (vượt ${Math.abs(remaining)})`}
             {!isOver && !isComplete && remaining > 0 && ` (còn ${remaining})`}
           </Typography>
-          <Box />
         </Box>
       </Paper>
 
@@ -332,7 +397,7 @@ const AssignmentPanel = ({ classSubject, onBack }: AssignmentPanelProps) => {
           variant="outlined"
           startIcon={<AddOutlined />}
           onClick={handleAddRow}
-          disabled={rows.length >= teachers.length || saving}
+          disabled={rows.length >= teacherAvailability.length || saving}
           sx={{ textTransform: 'none', borderRadius: 2 }}
         >
           Thêm giáo viên
@@ -341,8 +406,8 @@ const AssignmentPanel = ({ classSubject, onBack }: AssignmentPanelProps) => {
         <Button
           variant="contained"
           startIcon={<SaveOutlined />}
-          onClick={handleSave}
-          disabled={saving || rows.length === 0}
+          onClick={() => handleSave()}
+          disabled={saving || rows.length === 0 || !isDirty} // ← chỉ enable khi có thay đổi
           sx={{ textTransform: 'none', borderRadius: 2 }}
         >
           {saving ? 'Đang lưu...' : 'Lưu phân công'}

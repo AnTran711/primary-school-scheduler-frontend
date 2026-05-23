@@ -1,24 +1,28 @@
-export interface TeacherAssignment {
+export interface TeacherAvailability {
   teacherId: string;
   teacherName: string;
-  lessonCount: number;
+  numberOfLessonsPerWeek: number;
+  assignedLessons: number; // tổng tiết đã phân công (không tính classSubject hiện tại)
 }
 
-export interface ClassSubjectLesson {
-  classSubjectId: string;
-  assignments: TeacherAssignment[];
-}
-
-export interface BulkLessonRequest {
-  classSubjectId: string;
-  assignments: {
-    teacherId: string;
-    lessonCount: number;
-  }[];
+export interface TeacherWorkload {
+  teacherId: string;
+  teacherName: string;
+  numberOfLessonsPerWeek: number;
+  assignedLessons: number; // tổng tiết đã phân công toàn trường
 }
 
 export interface AssignmentRow {
   teacherId: string;
   lessonCount: number;
-  isEditing: boolean;
+}
+
+export interface ClassSubjectLesson {
+  classSubjectId: string;
+  assignments: AssignmentRow[];
+}
+
+export interface BulkLessonRequest {
+  classSubjectId: string;
+  assignments: AssignmentRow[];
 }
