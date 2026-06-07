@@ -8,6 +8,7 @@ import SubjectPage from '@/pages/subject-page';
 import SchoolClassPage from '@/pages/school-class-page';
 import ClassSubjectPage from '@/pages/class-subject-page';
 import LessonPage from '@/pages/lesson-page';
+import TimetablePage from '@/pages/timetable-page';
 
 const router = createBrowserRouter([
   // ── Public routes ──────────────────────────────────────────────────────────
@@ -26,7 +27,11 @@ const router = createBrowserRouter([
           {
             index: true,
             path: '/',
-            element: <Navigate to="/teachers" replace />
+            element: <Navigate to="/timetable" replace />
+          },
+          {
+            path: '/timetable',
+            element: <TimetablePage />
           },
           {
             path: '/teachers',
