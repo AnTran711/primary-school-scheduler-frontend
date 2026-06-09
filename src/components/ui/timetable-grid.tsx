@@ -133,6 +133,22 @@ const TimetableGrid = ({
             mb: 1
           }}
         >
+          <Box
+            sx={{
+              py: 0.75,
+              textAlign: 'center',
+              bgcolor: 'primary.main',
+              borderRadius: 1
+            }}
+          >
+            <Typography
+              variant="caption"
+              sx={{ fontWeight: 700, color: 'white' }}
+            >
+              Thứ
+            </Typography>
+          </Box>
+
           {days.map((day) => (
             <Box
               key={day}
