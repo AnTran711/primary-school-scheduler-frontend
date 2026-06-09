@@ -1,8 +1,15 @@
 import { Box, Typography } from '@mui/material';
-import { CheckCircleOutlined } from '@mui/icons-material';
+import { CheckCircleOutlined, InboxOutlined } from '@mui/icons-material';
 import type { GridState, LessonCardData } from '@/types/timetable';
 import { getUnplacedCards } from '@/utils/timetable.util';
 import LessonCard from './lesson-card';
+import { useDroppable } from '@dnd-kit/react';
+
+// Id prefix để nhận biết drop target là UnplacedCardsPanel
+export const UNPLACED_PANEL_ID_PREFIX = 'unplaced__';
+const getUnplacePanelId = (schoolClassId: string) => {
+  return `${UNPLACED_PANEL_ID_PREFIX}${schoolClassId}`;
+};
 
 interface UnplacedCardsPanelProps {
   schoolClassId: string;
@@ -23,9 +30,27 @@ const UnplacedCardsPanel = ({
   ).length;
   const placed = total - unplaced.length;
 
+  // Toàn bộ panel là 1 droptable
+  const { ref, isDropTarget } = useDroppable({
+    id: getUnplacePanelId(schoolClassId)
+  });
+
   return (
     <Box
-      sx={{ display: 'flex', flexDirection: 'column', gap: 1, height: '100%' }}
+      ref={ref}
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 1,
+        height: '100%',
+        borderRadius: 2,
+        border: '2px solid',
+        // Highlight khi đang kéo thẻ vào panel
+        borderColor: isDropTarget ? 'warning.main' : 'transparent',
+        bgcolor: isDropTarget ? 'warning.50' : 'transparent',
+        transition: 'all 150ms',
+        p: isDropTarget ? 0.5 : 0
+      }}
     >
       {/* Header */}
       <Box
@@ -39,7 +64,7 @@ const UnplacedCardsPanel = ({
           variant="caption"
           sx={{ fontWeight: 700, color: 'text.secondary' }}
         >
-          TIẾT CHƯA XẾP
+          TIẾT ĐÃ XẾP
         </Typography>
         <Typography
           variant="caption"
@@ -51,6 +76,31 @@ const UnplacedCardsPanel = ({
           {placed}/{total}
         </Typography>
       </Box>
+
+      {/* Drop hint khi đang kéo */}
+      {isDropTarget && (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 0.5,
+            py: 0.75,
+            borderRadius: 1.5,
+            border: '2px dashed',
+            borderColor: 'warning.main',
+            bgcolor: 'warning.50'
+          }}
+        >
+          <InboxOutlined sx={{ fontSize: 14, color: 'warning.main' }} />
+          <Typography
+            variant="caption"
+            sx={{ color: 'warning.main', fontWeight: 600 }}
+          >
+            Thả để bỏ xếp
+          </Typography>
+        </Box>
+      )}
 
       {/* Cards */}
       <Box

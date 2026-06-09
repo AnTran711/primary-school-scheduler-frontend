@@ -203,7 +203,11 @@ const TimetablePage = () => {
                 startIcon={<FileDownloadOutlined />}
                 onClick={handleExportExcel}
                 disabled={!hasSolution}
-                sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+                sx={{
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontWeight: 600
+                }}
               >
                 Xuất Excel
               </Button>
