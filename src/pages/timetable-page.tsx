@@ -4,14 +4,17 @@ import {
   Box,
   Button,
   CircularProgress,
-  Divider,
   MenuItem,
   Paper,
   TextField,
   Tooltip,
   Typography
 } from '@mui/material';
-import { FileDownloadOutlined } from '@mui/icons-material';
+import {
+  FileDownloadOutlined,
+  TuneOutlined,
+  RefreshOutlined
+} from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import { useSchoolClassStore } from '@/stores/school-class-store';
 import type {
@@ -56,6 +59,7 @@ const TimetablePage = () => {
   const [gridState, setGridState] = useState<GridState>({});
   const [hasSolution, setHasSolution] = useState(false);
   const [isLoadingLessons, setIsLoadingLessons] = useState(false);
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
 
   // ── Fix lỗi useEffect cascading renders ──────────────────────────────────
   // Dùng useMemo để derive effectiveClassId thay vì setState trong effect
@@ -167,46 +171,125 @@ const TimetablePage = () => {
 
   return (
     <DragDropProvider onDragEnd={handleDragEnd}>
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar trái */}
+      <Box
+        sx={{
+          display: 'flex',
+          flex: 1,
+          flexDirection: 'column',
+          overflow: 'hidden'
+        }}
+      >
+        {/* ── Header bar ─────────────────────────────────────────────── */}
         <Box
           sx={{
-            width: 220,
-            flexShrink: 0,
-            borderRight: '1px solid',
-            borderColor: 'divider',
-            height: '100%',
-            overflowY: 'auto',
-            p: 2,
             display: 'flex',
-            flexDirection: 'column',
+            alignItems: 'center',
             gap: 2,
-            bgcolor: 'background.paper'
+            px: 3,
+            py: 2,
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
+            flexShrink: 0
           }}
         >
-          <TimetableConfigPanel
-            config={config}
-            onChange={setConfig}
-            onSolve={handleSolve}
-            onReSolve={handleSolve}
-            isSolving={isSolving}
-            hasSolution={hasSolution}
-          />
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            Thời khóa biểu
+          </Typography>
 
-          <Divider />
+          <TextField
+            select
+            size="small"
+            label="Chọn lớp"
+            value={effectiveClassId}
+            onChange={(e) => setSelectedClassId(e.target.value)}
+            sx={{
+              minWidth: 160,
+              '& .MuiOutlinedInput-root': { borderRadius: 2 }
+            }}
+          >
+            {schoolClasses.map((sc) => (
+              <MenuItem key={sc.id} value={sc.id}>
+                {sc.name}
+              </MenuItem>
+            ))}
+          </TextField>
 
+          {/* Spacer */}
+          <Box sx={{ flex: 1 }} />
+
+          {/* Nút cấu hình */}
+          <Tooltip title="Cấu hình khung thời khóa biểu">
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<TuneOutlined />}
+              onClick={() => setIsConfigOpen(true)}
+              sx={{
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 600,
+                borderColor: 'divider',
+                color: 'text.secondary',
+                '&:hover': {
+                  borderColor: 'primary.main',
+                  color: 'primary.main',
+                  bgcolor: 'primary.50'
+                }
+              }}
+            >
+              Cấu hình
+            </Button>
+          </Tooltip>
+
+          {/* Nút tạo / xếp lại thời khóa biểu */}
+          {!hasSolution ? (
+            <Button
+              variant="contained"
+              size="small"
+              onClick={handleSolve}
+              disabled={isSolving}
+              sx={{
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 600,
+                px: 2.5
+              }}
+            >
+              {isSolving ? 'Đang xếp lịch...' : 'Tạo thời khóa biểu'}
+            </Button>
+          ) : (
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<RefreshOutlined />}
+              onClick={handleSolve}
+              disabled={isSolving}
+              sx={{
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 600,
+                px: 2.5
+              }}
+            >
+              {isSolving ? 'Đang xếp lại...' : 'Xếp lại thời khóa biểu'}
+            </Button>
+          )}
+
+          {/* Nút xuất Excel */}
           <Tooltip title={!hasSolution ? 'Cần tạo thời khóa biểu trước' : ''}>
             <span>
               <Button
-                fullWidth
                 variant="outlined"
+                size="small"
                 startIcon={<FileDownloadOutlined />}
                 onClick={handleExportExcel}
                 disabled={!hasSolution}
                 sx={{
                   borderRadius: 2,
                   textTransform: 'none',
-                  fontWeight: 600
+                  fontWeight: 600,
+                  px: 2.5
                 }}
               >
                 Xuất Excel
@@ -215,127 +298,79 @@ const TimetablePage = () => {
           </Tooltip>
         </Box>
 
-        {/* Main content */}
-        <Box
-          sx={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden'
-          }}
-        >
-          {/* Topbar chọn lớp */}
+        {/* ── Body ───────────────────────────────────────────────────── */}
+        {isSolving ? (
           <Box
             sx={{
+              flex: 1,
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
-              gap: 2,
-              px: 3,
-              py: 1.5,
-              borderBottom: '1px solid',
-              borderColor: 'divider',
-              bgcolor: 'background.paper',
-              flexShrink: 0
+              justifyContent: 'center',
+              gap: 2
             }}
           >
-            <Typography variant="h6" sx={{ fontWeight: 700 }}>
-              Thời khóa biểu
-            </Typography>
-
-            <TextField
-              select
-              size="small"
-              label="Chọn lớp"
-              value={effectiveClassId}
-              onChange={(e) => setSelectedClassId(e.target.value)}
-              sx={{
-                minWidth: 160,
-                '& .MuiOutlinedInput-root': { borderRadius: 2 }
-              }}
-            >
-              {schoolClasses.map((sc) => (
-                <MenuItem key={sc.id} value={sc.id}>
-                  {sc.name}
-                </MenuItem>
-              ))}
-            </TextField>
-
-            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              Kéo thả tiết học vào ô, ghim vị trí cố định rồi bấm{' '}
-              <strong>Tạo thời khóa biểu</strong>
+            <CircularProgress size={48} />
+            <Typography sx={{ color: 'text.secondary' }}>
+              Đang xếp thời khóa biểu, vui lòng chờ...
             </Typography>
           </Box>
-
-          {/* Body */}
-          {isSolving ? (
+        ) : (
+          <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+            {/* Danh sách tiết chưa xếp */}
             <Box
               sx={{
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 2
+                width: 210,
+                flexShrink: 0,
+                borderRight: '1px solid',
+                borderColor: 'divider',
+                p: 1.5,
+                bgcolor: 'grey.50',
+                overflowY: 'auto'
               }}
             >
-              <CircularProgress size={48} />
-              <Typography sx={{ color: 'text.secondary' }}>
-                Đang xếp thời khóa biểu, vui lòng chờ...
-              </Typography>
+              {isLoadingLessons ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', pt: 4 }}>
+                  <CircularProgress size={24} />
+                </Box>
+              ) : (
+                <UnplacedCardsPanel
+                  schoolClassId={effectiveClassId}
+                  allCards={allCards}
+                  gridState={gridState}
+                  onTogglePin={handleTogglePin}
+                />
+              )}
             </Box>
-          ) : (
-            <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-              {/* Danh sách tiết chưa xếp */}
-              <Box
-                sx={{
-                  width: 170,
-                  flexShrink: 0,
-                  borderRight: '1px solid',
-                  borderColor: 'divider',
-                  p: 1.5,
-                  bgcolor: 'grey.50',
-                  overflowY: 'auto'
-                }}
-              >
-                {isLoadingLessons ? (
-                  <Box
-                    sx={{ display: 'flex', justifyContent: 'center', pt: 4 }}
-                  >
-                    <CircularProgress size={24} />
-                  </Box>
-                ) : (
-                  <UnplacedCardsPanel
+
+            {/* Grid */}
+            <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
+              {selectedClass && (
+                <Paper variant="outlined" sx={{ borderRadius: 2, p: 2 }}>
+                  <Typography variant="body1" sx={{ fontWeight: 700, mb: 1.5 }}>
+                    {selectedClass.name}
+                  </Typography>
+                  <TimetableGrid
                     schoolClassId={effectiveClassId}
-                    allCards={allCards}
+                    config={config}
                     gridState={gridState}
                     onTogglePin={handleTogglePin}
                   />
-                )}
-              </Box>
-
-              {/* Grid */}
-              <Box sx={{ flex: 1, overflowY: 'auto', p: 2 }}>
-                {selectedClass && (
-                  <Paper variant="outlined" sx={{ borderRadius: 2, p: 2 }}>
-                    <Typography
-                      variant="body1"
-                      sx={{ fontWeight: 700, mb: 1.5 }}
-                    >
-                      {selectedClass.name}
-                    </Typography>
-                    <TimetableGrid
-                      schoolClassId={effectiveClassId}
-                      config={config}
-                      gridState={gridState}
-                      onTogglePin={handleTogglePin}
-                    />
-                  </Paper>
-                )}
-              </Box>
+                </Paper>
+              )}
             </Box>
-          )}
-        </Box>
-      </div>
+          </Box>
+        )}
+      </Box>
+
+      {/* ── Config Modal ───────────────────────────────────────────── */}
+      <TimetableConfigPanel
+        config={config}
+        onChange={setConfig}
+        isSolving={isSolving}
+        open={isConfigOpen}
+        onClose={() => setIsConfigOpen(false)}
+      />
 
       <DragOverlay>
         {(source) => {

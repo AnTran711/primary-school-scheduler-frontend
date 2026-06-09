@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   CalendarMonth,
@@ -7,9 +8,11 @@ import {
   MenuBook,
   LogoutOutlined,
   AssignmentOutlined,
-  AssignmentInd
+  AssignmentInd,
+  ChevronLeftOutlined,
+  ChevronRightOutlined
 } from '@mui/icons-material';
-import { Avatar, IconButton, Tooltip } from '@mui/material';
+import { Avatar, Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { useAuthStore } from '@/stores/auth-store';
 import { authApi } from '@/api/auth.api';
 
@@ -51,33 +54,81 @@ const NAV_ITEMS: NavItem[] = [
 
 // ─── SidebarNavItem ────────────────────────────────────────────────────────────
 
-const SidebarNavItem = ({ item }: { item: NavItem }) => (
-  <NavLink
-    to={item.path}
-    className={({ isActive }) =>
-      [
-        'relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150',
-        isActive
-          ? 'bg-white/10 text-white'
-          : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
-      ].join(' ')
-    }
-  >
-    {({ isActive }) => (
-      <>
-        {isActive && (
-          <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-teal-400" />
-        )}
-        <span className={isActive ? 'text-teal-400' : ''}>{item.icon}</span>
-        <span>{item.label}</span>
-      </>
-    )}
-  </NavLink>
+const SidebarNavItem = ({
+  item,
+  collapsed
+}: {
+  item: NavItem;
+  collapsed: boolean;
+}) => (
+  <Tooltip title={collapsed ? item.label : ''} placement="right" arrow>
+    <NavLink
+      to={item.path}
+      style={({ isActive }) => ({
+        position: 'relative',
+        display: 'flex',
+        alignItems: 'center',
+        gap: collapsed ? 0 : 12,
+        padding: collapsed ? '10px 0' : '10px 12px',
+        justifyContent: collapsed ? 'center' : 'flex-start',
+        borderRadius: 8,
+        fontSize: '0.875rem',
+        fontWeight: 500,
+        textDecoration: 'none',
+        transition: 'all 150ms ease',
+        color: isActive ? '#ffffff' : '#94a3b8',
+        backgroundColor: isActive ? 'rgba(255,255,255,0.1)' : 'transparent',
+        overflow: 'hidden'
+      })}
+    >
+      {({ isActive }) => (
+        <>
+          {/* Active indicator bar */}
+          {isActive && (
+            <span
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                width: 3,
+                height: 20,
+                borderRadius: '0 4px 4px 0',
+                backgroundColor: '#2dd4bf'
+              }}
+            />
+          )}
+          {/* Icon */}
+          <span
+            style={{
+              flexShrink: 0,
+              display: 'flex',
+              color: isActive ? '#2dd4bf' : '#94a3b8'
+            }}
+          >
+            {item.icon}
+          </span>
+          {/* Label */}
+          {!collapsed && (
+            <span
+              style={{
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              {item.label}
+            </span>
+          )}
+        </>
+      )}
+    </NavLink>
+  </Tooltip>
 );
 
 // ─── UserSection ───────────────────────────────────────────────────────────────
 
-const UserSection = () => {
+const UserSection = ({ collapsed }: { collapsed: boolean }) => {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
@@ -92,9 +143,52 @@ const UserSection = () => {
 
   const avatarLetter = user?.username?.charAt(0).toUpperCase() ?? 'U';
 
+  if (collapsed) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 1,
+          py: 1.5
+        }}
+      >
+        <Tooltip title={user?.username ?? 'Người dùng'} placement="right" arrow>
+          <Avatar
+            sx={{
+              width: 32,
+              height: 32,
+              fontSize: '0.8125rem',
+              fontWeight: 600,
+              bgcolor: 'rgba(45,212,191,0.15)',
+              color: '#2dd4bf'
+            }}
+          >
+            {avatarLetter}
+          </Avatar>
+        </Tooltip>
+        <Tooltip title="Đăng xuất" placement="right" arrow>
+          <IconButton
+            size="small"
+            onClick={handleLogout}
+            sx={{
+              color: '#94a3b8',
+              '&:hover': {
+                bgcolor: 'rgba(239,68,68,0.1)',
+                color: '#ef4444'
+              }
+            }}
+          >
+            <LogoutOutlined sx={{ fontSize: 18 }} />
+          </IconButton>
+        </Tooltip>
+      </Box>
+    );
+  }
+
   return (
-    <div className="flex items-center gap-2 px-3 py-3">
-      {/* Avatar */}
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 2, py: 1.5 }}>
       <Avatar
         sx={{
           width: 32,
@@ -109,18 +203,26 @@ const UserSection = () => {
         {avatarLetter}
       </Avatar>
 
-      {/* Username */}
-      <span className="flex-1 truncate text-sm font-medium text-slate-300">
+      <Typography
+        variant="body2"
+        sx={{
+          flex: 1,
+          fontWeight: 500,
+          color: '#cbd5e1',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap'
+        }}
+      >
         {user?.username ?? 'Người dùng'}
-      </span>
+      </Typography>
 
-      {/* Logout button */}
       <Tooltip title="Đăng xuất" placement="right">
         <IconButton
           size="small"
           onClick={handleLogout}
           sx={{
-            color: 'rgba(148,163,184,1)',
+            color: '#94a3b8',
             flexShrink: 0,
             '&:hover': {
               bgcolor: 'rgba(239,68,68,0.1)',
@@ -131,36 +233,111 @@ const UserSection = () => {
           <LogoutOutlined sx={{ fontSize: 18 }} />
         </IconButton>
       </Tooltip>
-    </div>
+    </Box>
   );
 };
 
 // ─── LeftSidebar ───────────────────────────────────────────────────────────────
 
-const LeftSidebar = () => {
-  return (
-    <aside className="flex h-full w-60 shrink-0 flex-col bg-[#0f172a]">
-      {/* Logo */}
-      <div className="px-5 py-6">
-        <h1 className="text-lg font-bold tracking-tight text-white">
-          EduScheduler
-        </h1>
-      </div>
+const SIDEBAR_EXPANDED_WIDTH = 240;
+const SIDEBAR_COLLAPSED_WIDTH = 64;
 
-      <div className="mx-4 h-px bg-white/10" />
+const LeftSidebar = () => {
+  const [collapsed, setCollapsed] = useState(false);
+
+  const width = collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH;
+
+  return (
+    <Box
+      component="aside"
+      sx={{
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        flexShrink: 0,
+        width,
+        bgcolor: '#0f172a',
+        transition: 'width 300ms cubic-bezier(0.4, 0, 0.2, 1)',
+        overflow: 'hidden'
+      }}
+    >
+      {/* Logo + Toggle */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: collapsed ? 'center' : 'space-between',
+          px: collapsed ? 0 : 2.5,
+          py: 2,
+          minHeight: 64
+        }}
+      >
+        {!collapsed && (
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 700,
+              letterSpacing: '-0.02em',
+              color: '#ffffff',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            EduScheduler
+          </Typography>
+        )}
+        <IconButton
+          size="small"
+          onClick={() => setCollapsed((prev) => !prev)}
+          sx={{
+            width: 32,
+            height: 32,
+            color: '#94a3b8',
+            bgcolor: 'rgba(255,255,255,0.05)',
+            borderRadius: 1.5,
+            transition: 'all 150ms ease',
+            '&:hover': {
+              bgcolor: 'rgba(255,255,255,0.1)',
+              color: '#ffffff'
+            }
+          }}
+        >
+          {collapsed ? (
+            <ChevronRightOutlined sx={{ fontSize: 18 }} />
+          ) : (
+            <ChevronLeftOutlined sx={{ fontSize: 18 }} />
+          )}
+        </IconButton>
+      </Box>
+
+      {/* Divider */}
+      <Box sx={{ mx: 2, height: '1px', bgcolor: 'rgba(255,255,255,0.08)' }} />
 
       {/* Navigation */}
-      <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4">
+      <Box
+        component="nav"
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 0.5,
+          flex: 1,
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          px: 1.5,
+          py: 2
+        }}
+      >
         {NAV_ITEMS.map((item) => (
-          <SidebarNavItem key={item.path} item={item} />
+          <SidebarNavItem key={item.path} item={item} collapsed={collapsed} />
         ))}
-      </nav>
+      </Box>
 
-      <div className="mx-4 h-px bg-white/10" />
+      {/* Divider */}
+      <Box sx={{ mx: 2, height: '1px', bgcolor: 'rgba(255,255,255,0.08)' }} />
 
       {/* User section */}
-      <UserSection />
-    </aside>
+      <UserSection collapsed={collapsed} />
+    </Box>
   );
 };
 

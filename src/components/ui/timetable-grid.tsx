@@ -22,7 +22,6 @@ interface TimetableGridProps {
   onTogglePin: (cardId: string) => void;
 }
 
-const CELL_W = 108;
 const LABEL_W = 72;
 const GAP = 4;
 
@@ -38,7 +37,8 @@ const TimetableGrid = ({
     ? ALL_PERIODS.slice(0, config.afternoonPeriods)
     : [];
 
-  const gridTemplate = `${LABEL_W}px repeat(${days.length}, ${CELL_W}px)`;
+  // Dùng 1fr để grid tự chia đều không gian, tránh scroll ngang
+  const gridTemplate = `${LABEL_W}px repeat(${days.length}, 1fr)`;
 
   const renderShiftRows = (shift: Shift, periods: Period[]) => (
     <>
@@ -119,21 +119,36 @@ const TimetableGrid = ({
     </>
   );
 
-  const minWidth = LABEL_W + days.length * CELL_W + days.length * GAP;
-
   return (
-    <Box sx={{ overflowX: 'auto' }}>
-      <Box sx={{ minWidth }}>
-        {/* Day headers */}
+    <Box>
+      {/* Day headers */}
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: gridTemplate,
+          gap: `${GAP}px`,
+          mb: 1
+        }}
+      >
         <Box
           sx={{
-            display: 'grid',
-            gridTemplateColumns: gridTemplate,
-            gap: `${GAP}px`,
-            mb: 1
+            py: 0.75,
+            textAlign: 'center',
+            bgcolor: 'primary.main',
+            borderRadius: 1
           }}
         >
+          <Typography
+            variant="caption"
+            sx={{ fontWeight: 700, color: 'white' }}
+          >
+            Thứ
+          </Typography>
+        </Box>
+
+        {days.map((day) => (
           <Box
+            key={day}
             sx={{
               py: 0.75,
               textAlign: 'center',
@@ -145,33 +160,14 @@ const TimetableGrid = ({
               variant="caption"
               sx={{ fontWeight: 700, color: 'white' }}
             >
-              Thứ
+              {DAY_LABELS[day]}
             </Typography>
           </Box>
-
-          {days.map((day) => (
-            <Box
-              key={day}
-              sx={{
-                py: 0.75,
-                textAlign: 'center',
-                bgcolor: 'primary.main',
-                borderRadius: 1
-              }}
-            >
-              <Typography
-                variant="caption"
-                sx={{ fontWeight: 700, color: 'white' }}
-              >
-                {DAY_LABELS[day]}
-              </Typography>
-            </Box>
-          ))}
-        </Box>
-
-        {renderShiftRows('MORNING', morningPeriods)}
-        {config.hasAfternoon && renderShiftRows('AFTERNOON', afternoonPeriods)}
+        ))}
       </Box>
+
+      {renderShiftRows('MORNING', morningPeriods)}
+      {config.hasAfternoon && renderShiftRows('AFTERNOON', afternoonPeriods)}
     </Box>
   );
 };
