@@ -17,10 +17,10 @@ import {
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import { useSchoolClassStore } from '@/stores/school-class-store';
+import { useTimetableStore } from '@/stores/timetable-store';
 import type {
   GridState,
-  LessonCardData,
-  TimetableConfig
+  LessonCardData
 } from '@/types/timetable';
 import {
   extractPinnedItems,
@@ -34,17 +34,8 @@ import TimetableGrid from '@/components/ui/timetable-grid';
 import LessonCard from '@/components/ui/lesson-card';
 import { useTimetableDnd } from '@/hooks/use-timetable-dnd';
 import { useTimetableExcel } from '@/hooks/use-timetable-excel';
-import { fetchLessonsOverviewBySchoolClassAPI } from '@/api/lesson.api';
+import { fetchLessonsOverviewAPI } from '@/api/lesson.api';
 import { useTimetableSolving } from '@/hooks/use-timetable-solving';
-
-// ─── Default config ───────────────────────────────────────────────────────────
-
-const DEFAULT_CONFIG: TimetableConfig = {
-  numberOfDays: 5,
-  morningPeriods: 5,
-  hasAfternoon: false,
-  afternoonPeriods: 3
-};
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -53,11 +44,20 @@ const TimetablePage = () => {
 
   const { isSolving, solve } = useTimetableSolving();
 
-  const [config, setConfig] = useState<TimetableConfig>(DEFAULT_CONFIG);
+  // ── State từ store ──────────────────────────────────────────────────────────
+  const config = useTimetableStore((s) => s.config);
+  const setConfig = useTimetableStore((s) => s.setConfig);
+  const allCards = useTimetableStore((s) => s.allCards);
+  const setAllCards = useTimetableStore((s) => s.setAllCards);
+  const gridState = useTimetableStore((s) => s.gridState);
+  const setGridState = useTimetableStore((s) => s.setGridState);
+  const updateGridState = useTimetableStore((s) => s.updateGridState);
+  const hasSolution = useTimetableStore((s) => s.hasSolution);
+  const setHasSolution = useTimetableStore((s) => s.setHasSolution);
+  const togglePin = useTimetableStore((s) => s.togglePin);
+
+  // ── Local UI state ──────────────────────────────────────────────────────────
   const [selectedClassId, setSelectedClassId] = useState('');
-  const [allCards, setAllCards] = useState<LessonCardData[]>([]);
-  const [gridState, setGridState] = useState<GridState>({});
-  const [hasSolution, setHasSolution] = useState(false);
   const [isLoadingLessons, setIsLoadingLessons] = useState(false);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
 
@@ -78,49 +78,27 @@ const TimetablePage = () => {
     init();
   }, [schoolClasses]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Load lessons khi đổi lớp
+  // Load tất cả lessons một lần khi mount
   useEffect(() => {
     const load = async () => {
-      if (!effectiveClassId) return;
-
       setIsLoadingLessons(true);
       try {
-        const res =
-          await fetchLessonsOverviewBySchoolClassAPI(effectiveClassId);
+        const res = await fetchLessonsOverviewAPI();
         const cards = generateLessonCards(res.data);
-        setAllCards((prev) => {
-          const others = prev.filter(
-            (c) => c.schoolClassId !== effectiveClassId
-          );
-          return [...others, ...cards];
-        });
+        setAllCards(cards);
       } finally {
         setIsLoadingLessons(false);
       }
     };
     load();
-  }, [effectiveClassId]);
-
-  // ── Toggle pin ─────────────────────────────────────────────────────────────
-
-  const handleTogglePin = (cardId: string) => {
-    setAllCards((prev) =>
-      prev.map((c) => (c.id === cardId ? { ...c, isPinned: !c.isPinned } : c))
-    );
-    setGridState((prev) => {
-      const next = { ...prev };
-      for (const [k, v] of Object.entries(next)) {
-        if (v?.id === cardId) next[k] = { ...v, isPinned: !v.isPinned };
-      }
-      return next;
-    });
-  };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── DnD (hook tách riêng) ─────────────────────────────────────────────────
 
   const { handleDragEnd } = useTimetableDnd({
     gridState,
-    setGridState
+    setGridState,
+    updateGridState
   });
 
   // ── Solve ──────────────────────────────────────────────────────────────────
@@ -130,8 +108,10 @@ const TimetablePage = () => {
     const pinnedItems = extractPinnedItems(gridState);
 
     solve({ timeslots, pinnedItems }, (result) => {
-      // Cập nhật grid với kết quả trả về
-      const newGrid: GridState = { ...gridState };
+      // Bắt đầu từ grid trống — API result là source of truth
+      const newGrid: GridState = {};
+      const usedCardIds = new Set<string>();
+
       for (const lesson of result.lessons) {
         if (!lesson.dayOfWeek || !lesson.shift || !lesson.period) continue;
         const cellId = getCellId(
@@ -140,14 +120,18 @@ const TimetablePage = () => {
           lesson.shift,
           lesson.period
         );
-        // Tìm card chưa được xếp vào ô nào
+
+        // Tìm card chưa được dùng ứng với lesson
         const card = allCards.find(
           (c) =>
             c.classSubjectId === lesson.classSubjectId &&
             c.teacherId === lesson.teacherId &&
-            !Object.values(newGrid).some((g) => g?.id === c.id)
+            !usedCardIds.has(c.id)
         );
-        if (card) newGrid[cellId] = { ...card, isPinned: lesson.isPinned };
+        if (card) {
+          usedCardIds.add(card.id);
+          newGrid[cellId] = { ...card, isPinned: lesson.pinned };
+        }
       }
       setGridState(newGrid);
       setHasSolution(true);
@@ -338,7 +322,6 @@ const TimetablePage = () => {
                   schoolClassId={effectiveClassId}
                   allCards={allCards}
                   gridState={gridState}
-                  onTogglePin={handleTogglePin}
                 />
               )}
             </Box>
@@ -354,7 +337,7 @@ const TimetablePage = () => {
                     schoolClassId={effectiveClassId}
                     config={config}
                     gridState={gridState}
-                    onTogglePin={handleTogglePin}
+                    onTogglePin={togglePin}
                   />
                 </Paper>
               )}

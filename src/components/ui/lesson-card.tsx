@@ -88,9 +88,9 @@ const LessonCard = ({
             }}
           >
             {card.isPinned ? (
-              <PushPin sx={{ fontSize: compact ? 11 : 13 }} />
+              <PushPin sx={{ fontSize: 13 }} />
             ) : (
-              <PushPinOutlined sx={{ fontSize: compact ? 11 : 13 }} />
+              <PushPinOutlined sx={{ fontSize: 13 }} />
             )}
           </IconButton>
         </Tooltip>

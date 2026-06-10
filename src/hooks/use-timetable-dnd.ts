@@ -6,12 +6,14 @@ import { UNPLACED_PANEL_ID_PREFIX } from '@/components/ui/unplaced-cards-panel';
 
 interface UseTimetableDndProps {
   gridState: GridState;
-  setGridState: React.Dispatch<React.SetStateAction<GridState>>;
+  setGridState: (grid: GridState) => void;
+  updateGridState: (updater: (prev: GridState) => GridState) => void;
 }
 
 export const useTimetableDnd = ({
   gridState,
-  setGridState
+  setGridState,
+  updateGridState
 }: UseTimetableDndProps) => {
   const handleDragEnd = async (event: DragEndEvent) => {
     const source = event.operation.source;
@@ -35,7 +37,7 @@ export const useTimetableDnd = ({
         return;
       }
 
-      setGridState((prev) => {
+      updateGridState((prev) => {
         const next = { ...prev };
         const oldCell = Object.keys(next).find((k) => next[k]?.id === card.id);
         if (oldCell) next[oldCell] = null;

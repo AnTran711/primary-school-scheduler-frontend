@@ -15,14 +15,12 @@ interface UnplacedCardsPanelProps {
   schoolClassId: string;
   allCards: LessonCardData[];
   gridState: GridState;
-  onTogglePin: (cardId: string) => void;
 }
 
 const UnplacedCardsPanel = ({
   schoolClassId,
   allCards,
-  gridState,
-  onTogglePin
+  gridState
 }: UnplacedCardsPanelProps) => {
   const unplaced = getUnplacedCards(allCards, gridState, schoolClassId);
   const total = allCards.filter(
@@ -134,7 +132,7 @@ const UnplacedCardsPanel = ({
           </Box>
         ) : (
           unplaced.map((card) => (
-            <LessonCard key={card.id} card={card} onTogglePin={onTogglePin} />
+            <LessonCard key={card.id} card={card} />
           ))
         )}
       </Box>

@@ -82,7 +82,7 @@ export interface LessonTimetableResponse {
   dayOfWeek: DayOfWeek | null;
   shift: Shift | null;
   period: Period | null;
-  isPinned: boolean;
+  pinned: boolean;
 }
 
 export interface TimetableResponse {
