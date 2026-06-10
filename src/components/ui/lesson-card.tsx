@@ -17,7 +17,8 @@ const LessonCard = ({
 }: LessonCardProps) => {
   const { ref, isDragging } = useDraggable({
     id: card.id,
-    data: { card } // truyền data để DragEndEvent đọc được
+    data: { card }, // truyền data để DragEndEvent đọc được,
+    disabled: card.isPinned
   });
 
   const color = CARD_COLORS[card.colorIndex];

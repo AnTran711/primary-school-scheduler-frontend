@@ -18,6 +18,7 @@ export const useTimetableSolving = () => {
     // Gửi request và nhận jobId ngay
     const res = await startSolvingAPI(request);
     const { jobId } = res.data;
+    toast.info(res.message || 'Thời khóa biểu đang được tạo. Vui lòng đợi.');
 
     // Polling mỗi 2s để kiểm tra kết quả
     const poll = async (): Promise<void> => {
