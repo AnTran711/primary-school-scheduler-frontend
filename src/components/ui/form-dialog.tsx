@@ -177,7 +177,6 @@ const FormDialog = <T extends FieldValues>({
       onClose={loading ? undefined : onClose}
       fullWidth
       maxWidth="sm"
-      slotProps={{ paper: { sx: { borderRadius: 3 } } }}
     >
       <Box
         component="form"
@@ -193,10 +192,7 @@ const FormDialog = <T extends FieldValues>({
               justifyContent: 'space-between'
             }}
           >
-            <Typography
-              variant="h6"
-              sx={{ fontWeight: 700, color: 'text.primary' }}
-            >
+            <Typography variant="h6" sx={{ color: 'text.primary' }}>
               {title}
             </Typography>
             <IconButton size="small" onClick={onClose} disabled={loading}>
@@ -223,16 +219,10 @@ const FormDialog = <T extends FieldValues>({
             color="inherit"
             onClick={onClose}
             disabled={loading}
-            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
           >
             Hủy
           </Button>
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={loading}
-            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
-          >
+          <Button type="submit" variant="contained" disabled={loading}>
             {loading ? 'Đang lưu...' : submitLabel}
           </Button>
         </DialogActions>

@@ -37,7 +37,6 @@ const DeleteDialog = ({
       onClose={loading ? undefined : onClose} // khóa đóng khi đang xóa
       maxWidth="xs"
       fullWidth
-      slotProps={{ paper: { sx: { borderRadius: 3 } } }}
     >
       {/* Header */}
       <DialogTitle sx={{ px: 3, pt: 3, pb: 1.5 }}>
@@ -93,7 +92,6 @@ const DeleteDialog = ({
           color="inherit"
           onClick={onClose}
           disabled={loading}
-          sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
         >
           Hủy
         </Button>
@@ -103,7 +101,6 @@ const DeleteDialog = ({
           onClick={onConfirm}
           disabled={loading}
           startIcon={<DeleteOutlined />}
-          sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
         >
           {loading ? 'Đang xóa...' : 'Xóa'}
         </Button>

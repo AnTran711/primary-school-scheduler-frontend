@@ -16,6 +16,17 @@ import { Avatar, Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { useAuthStore } from '@/stores/auth-store';
 import { authApi } from '@/api/auth.api';
 
+// ─── Design Tokens ────────────────────────────────────────────────────────────
+
+const SIDEBAR_BG = '#0f172a';
+const SIDEBAR_TEXT = '#94a3b8';
+const SIDEBAR_TEXT_HOVER = '#cbd5e1';
+const SIDEBAR_ACTIVE_TEXT = '#ffffff';
+const SIDEBAR_ACCENT = '#2dd4bf';
+const SIDEBAR_ACTIVE_BG = 'rgba(255,255,255,0.08)';
+// const SIDEBAR_HOVER_BG = 'rgba(255,255,255,0.04)';
+const SIDEBAR_DIVIDER = 'rgba(255,255,255,0.08)';
+
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
 interface NavItem {
@@ -73,11 +84,11 @@ const SidebarNavItem = ({
         justifyContent: collapsed ? 'center' : 'flex-start',
         borderRadius: 8,
         fontSize: '0.875rem',
-        fontWeight: 500,
+        fontWeight: isActive ? 600 : 500,
         textDecoration: 'none',
-        transition: 'all 150ms ease',
-        color: isActive ? '#ffffff' : '#94a3b8',
-        backgroundColor: isActive ? 'rgba(255,255,255,0.1)' : 'transparent',
+        transition: 'all 200ms cubic-bezier(0.4, 0, 0.2, 1)',
+        color: isActive ? SIDEBAR_ACTIVE_TEXT : SIDEBAR_TEXT,
+        backgroundColor: isActive ? SIDEBAR_ACTIVE_BG : 'transparent',
         overflow: 'hidden'
       })}
     >
@@ -94,7 +105,7 @@ const SidebarNavItem = ({
                 width: 3,
                 height: 20,
                 borderRadius: '0 4px 4px 0',
-                backgroundColor: '#2dd4bf'
+                backgroundColor: SIDEBAR_ACCENT
               }}
             />
           )}
@@ -103,7 +114,8 @@ const SidebarNavItem = ({
             style={{
               flexShrink: 0,
               display: 'flex',
-              color: isActive ? '#2dd4bf' : '#94a3b8'
+              transition: 'color 200ms ease',
+              color: isActive ? SIDEBAR_ACCENT : SIDEBAR_TEXT
             }}
           >
             {item.icon}
@@ -161,8 +173,8 @@ const UserSection = ({ collapsed }: { collapsed: boolean }) => {
               height: 32,
               fontSize: '0.8125rem',
               fontWeight: 600,
-              bgcolor: 'rgba(45,212,191,0.15)',
-              color: '#2dd4bf'
+              bgcolor: `${SIDEBAR_ACCENT}22`,
+              color: SIDEBAR_ACCENT
             }}
           >
             {avatarLetter}
@@ -173,7 +185,8 @@ const UserSection = ({ collapsed }: { collapsed: boolean }) => {
             size="small"
             onClick={handleLogout}
             sx={{
-              color: '#94a3b8',
+              color: SIDEBAR_TEXT,
+              transition: 'all 200ms ease',
               '&:hover': {
                 bgcolor: 'rgba(239,68,68,0.1)',
                 color: '#ef4444'
@@ -188,15 +201,17 @@ const UserSection = ({ collapsed }: { collapsed: boolean }) => {
   }
 
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 2, py: 1.5 }}>
+    <Box
+      sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 2, py: 1.5 }}
+    >
       <Avatar
         sx={{
           width: 32,
           height: 32,
           fontSize: '0.8125rem',
           fontWeight: 600,
-          bgcolor: 'rgba(45,212,191,0.15)',
-          color: '#2dd4bf',
+          bgcolor: `${SIDEBAR_ACCENT}22`,
+          color: SIDEBAR_ACCENT,
           flexShrink: 0
         }}
       >
@@ -208,7 +223,7 @@ const UserSection = ({ collapsed }: { collapsed: boolean }) => {
         sx={{
           flex: 1,
           fontWeight: 500,
-          color: '#cbd5e1',
+          color: SIDEBAR_TEXT_HOVER,
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap'
@@ -222,8 +237,9 @@ const UserSection = ({ collapsed }: { collapsed: boolean }) => {
           size="small"
           onClick={handleLogout}
           sx={{
-            color: '#94a3b8',
+            color: SIDEBAR_TEXT,
             flexShrink: 0,
+            transition: 'all 200ms ease',
             '&:hover': {
               bgcolor: 'rgba(239,68,68,0.1)',
               color: '#ef4444'
@@ -257,7 +273,7 @@ const LeftSidebar = () => {
         height: '100%',
         flexShrink: 0,
         width,
-        bgcolor: '#0f172a',
+        bgcolor: SIDEBAR_BG,
         transition: 'width 300ms cubic-bezier(0.4, 0, 0.2, 1)',
         overflow: 'hidden'
       }}
@@ -277,7 +293,6 @@ const LeftSidebar = () => {
           <Typography
             variant="h6"
             sx={{
-              fontWeight: 700,
               letterSpacing: '-0.02em',
               color: '#ffffff',
               whiteSpace: 'nowrap'
@@ -292,10 +307,10 @@ const LeftSidebar = () => {
           sx={{
             width: 32,
             height: 32,
-            color: '#94a3b8',
+            color: SIDEBAR_TEXT,
             bgcolor: 'rgba(255,255,255,0.05)',
             borderRadius: 1.5,
-            transition: 'all 150ms ease',
+            transition: 'all 200ms ease',
             '&:hover': {
               bgcolor: 'rgba(255,255,255,0.1)',
               color: '#ffffff'
@@ -311,7 +326,7 @@ const LeftSidebar = () => {
       </Box>
 
       {/* Divider */}
-      <Box sx={{ mx: 2, height: '1px', bgcolor: 'rgba(255,255,255,0.08)' }} />
+      <Box sx={{ mx: 2, height: '1px', bgcolor: SIDEBAR_DIVIDER }} />
 
       {/* Navigation */}
       <Box
@@ -324,7 +339,14 @@ const LeftSidebar = () => {
           overflowY: 'auto',
           overflowX: 'hidden',
           px: 1.5,
-          py: 2
+          py: 2,
+          // Scrollbar styling
+          '&::-webkit-scrollbar': { width: 4 },
+          '&::-webkit-scrollbar-track': { bgcolor: 'transparent' },
+          '&::-webkit-scrollbar-thumb': {
+            bgcolor: 'rgba(255,255,255,0.1)',
+            borderRadius: 2
+          }
         }}
       >
         {NAV_ITEMS.map((item) => (
@@ -333,7 +355,7 @@ const LeftSidebar = () => {
       </Box>
 
       {/* Divider */}
-      <Box sx={{ mx: 2, height: '1px', bgcolor: 'rgba(255,255,255,0.08)' }} />
+      <Box sx={{ mx: 2, height: '1px', bgcolor: SIDEBAR_DIVIDER }} />
 
       {/* User section */}
       <UserSection collapsed={collapsed} />

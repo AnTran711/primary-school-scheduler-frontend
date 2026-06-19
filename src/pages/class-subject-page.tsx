@@ -29,6 +29,7 @@ import {
 } from '@/api/class-subject.api';
 import type { ColumnDef } from '@/components/ui/data-table';
 import DataTable from '@/components/ui/data-table';
+import PageHeader from '@/components/ui/page-header';
 
 const ClassSubjectPage = () => {
   const schoolClasses = useSchoolClassStore((state) => state.schoolClasses);
@@ -163,89 +164,65 @@ const ClassSubjectPage = () => {
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
-      <main className="flex-1 overflow-y-auto px-8 py-6">
-        {/* Page title */}
-        <Box sx={{ mb: 4 }}>
-          <Typography
-            variant="h5"
-            sx={{ fontWeight: 700, color: 'text.primary' }}
-          >
-            Quản lý môn học theo lớp
-          </Typography>
-          <Typography variant="body2" sx={{ mt: 0.5, color: 'text.secondary' }}>
-            Phân công môn học và số tiết mỗi tuần cho từng lớp học
-          </Typography>
-        </Box>
+    <Box sx={{ display: 'flex', flex: 1, flexDirection: 'column', overflow: 'hidden' }}>
+      <Box sx={{ flex: 1, overflowY: 'auto', px: 4, py: 3 }}>
+        <PageHeader
+          title="Quản lý môn học theo lớp"
+          subtitle="Phân công môn học và số tiết mỗi tuần cho từng lớp học"
+          actions={
+            <>
+              {/* Chọn lớp */}
+              <TextField
+                select
+                size="small"
+                label="Chọn lớp học"
+                value={selectedClassId}
+                onChange={(e) => {
+                  setSelectedClassId(e.target.value);
+                  setSearchName('');
+                }}
+                sx={{ minWidth: 200 }}
+              >
+                {schoolClasses.map((sc) => (
+                  <MenuItem key={sc.id} value={sc.id}>
+                    {sc.name}
+                  </MenuItem>
+                ))}
+              </TextField>
 
-        {/* Toolbar */}
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 2,
-            mb: 4,
-            flexWrap: 'wrap'
-          }}
-        >
-          {/* Chọn lớp */}
-          <TextField
-            select
-            size="small"
-            label="Chọn lớp học"
-            value={selectedClassId}
-            onChange={(e) => {
-              setSelectedClassId(e.target.value);
-              setSearchName('');
-            }}
-            sx={{
-              minWidth: 200
-            }}
-          >
-            {schoolClasses.map((sc) => (
-              <MenuItem key={sc.id} value={sc.id}>
-                {sc.name}
-              </MenuItem>
-            ))}
-          </TextField>
+              {/* Search — chỉ hiện khi đã chọn lớp */}
+              {selectedClassId && (
+                <TextField
+                  size="small"
+                  placeholder="Tìm môn học..."
+                  value={searchName}
+                  onChange={(e) => setSearchName(e.target.value)}
+                  sx={{ width: 200 }}
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchOutlined fontSize="small" />
+                        </InputAdornment>
+                      )
+                    }
+                  }}
+                />
+              )}
 
-          {/* Search — chỉ hiện khi đã chọn lớp */}
-          {selectedClassId && (
-            <TextField
-              size="small"
-              placeholder="Tìm môn học..."
-              value={searchName}
-              onChange={(e) => setSearchName(e.target.value)}
-              sx={{
-                width: 200
-              }}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchOutlined fontSize="small" />
-                    </InputAdornment>
-                  )
-                }
-              }}
-            />
-          )}
-
-          {/* Add button — chỉ hiện khi đã chọn lớp */}
-          {selectedClassId && (
-            <Button
-              variant="contained"
-              startIcon={<AddOutlined />}
-              onClick={handleAdd}
-              sx={{
-                ml: 'auto',
-                fontWeight: 600
-              }}
-            >
-              Thêm môn học
-            </Button>
-          )}
-        </Box>
+              {/* Add button — chỉ hiện khi đã chọn lớp */}
+              {selectedClassId && (
+                <Button
+                  variant="contained"
+                  startIcon={<AddOutlined />}
+                  onClick={handleAdd}
+                >
+                  Thêm môn học
+                </Button>
+              )}
+            </>
+          }
+        />
 
         {/* Chưa chọn lớp */}
         {!selectedClassId && (
@@ -311,7 +288,7 @@ const ClassSubjectPage = () => {
             />
           </>
         )}
-      </main>
+      </Box>
 
       {/* Form dialog */}
       <ClassSubjectFormDialog
@@ -333,7 +310,7 @@ const ClassSubjectPage = () => {
         onConfirm={handleDeleteConfirm}
         onClose={() => setDeleteTarget(null)}
       />
-    </div>
+    </Box>
   );
 };
 

@@ -8,7 +8,11 @@ import {
   TextField,
   Typography
 } from '@mui/material';
-import { EditOutlined, PeopleOutlined } from '@mui/icons-material';
+import {
+  BookOutlined,
+  EditOutlined,
+  PeopleOutlined
+} from '@mui/icons-material';
 import { useSchoolClassStore } from '@/stores/school-class-store';
 import type { AssignmentRow } from '@/types/lesson';
 import type { ClassSubject } from '@/types/class-subject';
@@ -17,6 +21,7 @@ import AssignmentStatusBadge from '@/components/ui/assignment-status-badge';
 import AssignmentPanel from '@/components/ui/assignment-panel';
 import TeacherWorkloadDialog from '@/components/ui/teacher-workload-dialog';
 import { fetchLessonsByClassSubjectAPI } from '@/api/lesson.api';
+import PageHeader from '@/components/ui/page-header';
 
 // ─── lessonMap: lưu tổng tiết đã phân công theo classSubjectId ───────────────
 
@@ -83,66 +88,54 @@ const LessonPage = () => {
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
-      <main className="flex-1 overflow-y-auto px-8 py-6">
-        {/* Page header */}
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            justifyContent: 'space-between',
-            mb: 4
-          }}
-        >
-          <Box>
-            <Typography
-              variant="h5"
-              sx={{ fontWeight: 700, color: 'text.primary' }}
-            >
-              Phân công tiết học
-            </Typography>
-            <Typography
-              variant="body2"
-              sx={{ mt: 0.5, color: 'text.secondary' }}
-            >
-              Phân công giáo viên giảng dạy theo môn học của từng lớp
-            </Typography>
-          </Box>
+    <Box
+      sx={{
+        display: 'flex',
+        flex: 1,
+        flexDirection: 'column',
+        overflow: 'hidden'
+      }}
+    >
+      <Box sx={{ flex: 1, overflowY: 'auto', px: 4, py: 3 }}>
+        <PageHeader
+          title="Phân công tiết học"
+          subtitle="Phân công giáo viên giảng dạy theo môn học của từng lớp"
+          actions={
+            <>
+              {/* Chọn lớp */}
+              <TextField
+                select
+                size="small"
+                label="Chọn lớp học"
+                value={selectedClassId}
+                onChange={(e) => setSelectedClassId(e.target.value)}
+                sx={{ minWidth: 220 }}
+              >
+                {schoolClasses.map((sc) => (
+                  <MenuItem key={sc.id} value={sc.id}>
+                    {sc.name}
+                  </MenuItem>
+                ))}
+              </TextField>
 
-          {/* Nút xem tình trạng giáo viên */}
-          <Button
-            variant="outlined"
-            startIcon={<PeopleOutlined />}
-            onClick={() => setWorkloadDialogOpen(true)}
-            sx={{ textTransform: 'none', borderRadius: 2 }}
-          >
-            Tình trạng giáo viên
-          </Button>
-        </Box>
-
-        {/* Chọn lớp */}
-        <TextField
-          select
-          size="small"
-          label="Chọn lớp học"
-          value={selectedClassId}
-          onChange={(e) => setSelectedClassId(e.target.value)}
-          sx={{
-            minWidth: 260,
-            mb: 4,
-            '& .MuiOutlinedInput-root': { borderRadius: 2 }
-          }}
-        >
-          {schoolClasses.map((sc) => (
-            <MenuItem key={sc.id} value={sc.id}>
-              {sc.name}
-            </MenuItem>
-          ))}
-        </TextField>
+              {/* Nút xem tình trạng giáo viên */}
+              <Button
+                variant="outlined"
+                startIcon={<PeopleOutlined />}
+                onClick={() => setWorkloadDialogOpen(true)}
+              >
+                Tình trạng giáo viên
+              </Button>
+            </>
+          }
+        />
 
         {/* Chưa chọn lớp */}
         {!selectedClassId && (
           <Box sx={{ py: 10, textAlign: 'center' }}>
+            <BookOutlined
+              sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }}
+            />
             <Typography sx={{ color: 'text.disabled' }}>
               Chọn lớp học để bắt đầu phân công tiết học
             </Typography>
@@ -277,14 +270,14 @@ const LessonPage = () => {
             </Paper>
           </Box>
         )}
-      </main>
+      </Box>
 
       {/* Dialog tình trạng giáo viên */}
       <TeacherWorkloadDialog
         open={workloadDialogOpen}
         onClose={() => setWorkloadDialogOpen(false)}
       />
-    </div>
+    </Box>
   );
 };
 

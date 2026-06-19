@@ -75,7 +75,6 @@ const ClassSubjectFormDialog = ({
       onClose={loading ? undefined : onClose}
       maxWidth="xs"
       fullWidth
-      slotProps={{ paper: { sx: { borderRadius: 3 } } }}
     >
       <Box component="form" onSubmit={handleSubmit(onSubmit)}>
         <DialogTitle sx={{ px: 3, pt: 3, pb: 1.5 }}>
@@ -142,16 +141,10 @@ const ClassSubjectFormDialog = ({
             color="inherit"
             onClick={onClose}
             disabled={loading}
-            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
           >
             Hủy
           </Button>
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={loading}
-            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
-          >
+          <Button type="submit" variant="contained" disabled={loading}>
             {loading ? 'Đang lưu...' : 'Lưu'}
           </Button>
         </DialogActions>

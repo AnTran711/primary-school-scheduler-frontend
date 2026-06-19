@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { SearchOutlined, AddOutlined } from '@mui/icons-material';
-import { Button, InputAdornment, TextField } from '@mui/material';
+import { Box, Button, InputAdornment, TextField } from '@mui/material';
 import type { Teacher } from '@/types/teacher';
 import type { ColumnDef } from '@/components/ui/data-table';
 import DataTable from '@/components/ui/data-table';
@@ -17,6 +17,7 @@ import {
 } from '@/api/teacher.api';
 import { toast } from 'react-toastify';
 import DeleteDialog from '@/components/ui/delete-dialog';
+import PageHeader from '@/components/ui/page-header';
 
 // ─── Main Teacher Page ─────────────────────────────────────────────────────────
 
@@ -143,43 +144,42 @@ const TeacherPage = () => {
   }, [searchName, teachers]);
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
+    <Box sx={{ display: 'flex', flex: 1, flexDirection: 'column', overflow: 'hidden' }}>
       {/* Page content */}
-      <main className="flex-1 overflow-y-auto px-8 py-6">
-        {/* Page title + toolbar */}
-        <div className="mb-6 flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Quản lý giáo viên
-            </h1>
-          </div>
+      <Box sx={{ flex: 1, overflowY: 'auto', px: 4, py: 3 }}>
+        <PageHeader
+          title="Quản lý giáo viên"
+          subtitle="Quản lý danh sách giáo viên và số tiết dạy mỗi tuần"
+          actions={
+            <>
+              {/* Search by name */}
+              <TextField
+                size="small"
+                placeholder="Tìm kiếm theo tên"
+                value={searchName}
+                onChange={(e) => setSearchName(e.target.value)}
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchOutlined fontSize="small" />
+                      </InputAdornment>
+                    )
+                  }
+                }}
+              />
 
-          {/* Controls */}
-          <div className="flex items-center gap-3">
-            {/* Search by name */}
-            <TextField
-              size="small"
-              placeholder="Tìm kiếm theo tên"
-              value={searchName}
-              onChange={(e) => setSearchName(e.target.value)}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchOutlined fontSize="small" />
-                    </InputAdornment>
-                  )
-                }
-              }}
-            />
-
-            {/* Add button */}
-            <Button variant="contained" onClick={handleAdd}>
-              <AddOutlined fontSize="small" />
-              Thêm giáo viên mới
-            </Button>
-          </div>
-        </div>
+              {/* Add button */}
+              <Button
+                variant="contained"
+                startIcon={<AddOutlined />}
+                onClick={handleAdd}
+              >
+                Thêm giáo viên
+              </Button>
+            </>
+          }
+        />
 
         {/* Table */}
         <DataTable
@@ -187,8 +187,8 @@ const TeacherPage = () => {
           rows={filteredTeachers}
           onEdit={handleEdit}
           onDelete={handleDelete}
-        ></DataTable>
-      </main>
+        />
+      </Box>
 
       <FormDialog<TeacherFormValues>
         open={open}
@@ -208,7 +208,7 @@ const TeacherPage = () => {
         onConfirm={handleDeleteConfirm}
         onClose={() => setDeleteTarget(null)}
       />
-    </div>
+    </Box>
   );
 };
 

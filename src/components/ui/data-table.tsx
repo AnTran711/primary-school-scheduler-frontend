@@ -69,27 +69,20 @@ const DataTable = <T extends { id: string }>({
   const totalCols = columns.length + (showActions ? 1 : 0);
 
   return (
-    <TableContainer component={Paper} elevation={3}>
+    <TableContainer
+      component={Paper}
+      variant="outlined"
+      sx={{ borderRadius: 2, overflow: 'hidden' }}
+    >
       <Table>
         <TableHead>
-          <TableRow className="bg-gray-200">
+          <TableRow>
             {columns.map((col) => (
-              <TableCell
-                key={col.key}
-                align={col.align ?? 'left'}
-                sx={{ textTransform: 'uppercase', fontWeight: 600 }}
-              >
+              <TableCell key={col.key} align={col.align ?? 'left'}>
                 {col.label}
               </TableCell>
             ))}
-            {showActions && (
-              <TableCell
-                align="right"
-                sx={{ textTransform: 'uppercase', fontWeight: 600 }}
-              >
-                Thao tác
-              </TableCell>
-            )}
+            {showActions && <TableCell align="right">Thao tác</TableCell>}
           </TableRow>
         </TableHead>
 
@@ -102,7 +95,13 @@ const DataTable = <T extends { id: string }>({
             </TableRow>
           ) : (
             rows.map((row) => (
-              <TableRow key={row.id}>
+              <TableRow
+                key={row.id}
+                sx={{
+                  transition: 'background-color 150ms ease',
+                  '&:hover': { bgcolor: 'rgba(30, 64, 175, 0.03)' }
+                }}
+              >
                 {columns.map((col) => (
                   <TableCell key={col.key} align={col.align ?? 'left'}>
                     {col.render
@@ -114,7 +113,14 @@ const DataTable = <T extends { id: string }>({
                 ))}
                 {showActions && (
                   <TableCell align="right">
-                    <div className="flex items-center justify-end gap-1">
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'flex-end',
+                        gap: 0.5
+                      }}
+                    >
                       {onEdit && (
                         <Tooltip title="Chỉnh sửa">
                           <IconButton
@@ -137,7 +143,7 @@ const DataTable = <T extends { id: string }>({
                           </IconButton>
                         </Tooltip>
                       )}
-                    </div>
+                    </Box>
                   </TableCell>
                 )}
               </TableRow>

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { SearchOutlined, AddOutlined } from '@mui/icons-material';
-import { Button, InputAdornment, MenuItem, TextField } from '@mui/material';
+import { Box, Button, InputAdornment, MenuItem, TextField } from '@mui/material';
 import type { ColumnDef } from '@/components/ui/data-table';
 import DataTable from '@/components/ui/data-table';
 import FormDialog, { type FieldDef } from '@/components/ui/form-dialog';
@@ -19,6 +19,7 @@ import {
 } from '@/api/school-class.api';
 import { useBranchSchoolStore } from '@/stores/branch-school-store';
 import { useTeacherStore } from '@/stores/teacher-store';
+import PageHeader from '@/components/ui/page-header';
 
 // ─── Main School Class Page ─────────────────────────────────────────────────────────
 
@@ -179,60 +180,59 @@ const SchoolClassPage = () => {
   }, [searchName, selectedBranchSchoolId, schoolClasses]);
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
+    <Box sx={{ display: 'flex', flex: 1, flexDirection: 'column', overflow: 'hidden' }}>
       {/* Page content */}
-      <main className="flex-1 overflow-y-auto px-8 py-6">
-        {/* Page title + toolbar */}
-        <div className="mb-6 flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Quản lý lớp học
-            </h1>
-          </div>
+      <Box sx={{ flex: 1, overflowY: 'auto', px: 4, py: 3 }}>
+        <PageHeader
+          title="Quản lý lớp học"
+          subtitle="Quản lý danh sách lớp học, điểm trường và giáo viên chủ nhiệm"
+          actions={
+            <>
+              {/* Filter */}
+              <TextField
+                size="small"
+                label="Lọc theo điểm trường"
+                select
+                value={selectedBranchSchoolId}
+                onChange={(e) => setSelectedBranchSchoolId(e.target.value)}
+                sx={{ minWidth: 200 }}
+              >
+                <MenuItem value="all">Tất cả</MenuItem>
+                {branchSchoolOptions.map((opt) => (
+                  <MenuItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </MenuItem>
+                ))}
+              </TextField>
 
-          {/* Controls */}
-          <div className="flex items-center gap-3">
-            {/* Filter */}
-            <TextField
-              size="small"
-              label="Lọc theo điểm trường"
-              select
-              value={selectedBranchSchoolId}
-              onChange={(e) => setSelectedBranchSchoolId(e.target.value)}
-              sx={{ minWidth: 200 }}
-            >
-              <MenuItem value="all">Tất cả</MenuItem>
-              {branchSchoolOptions.map((opt) => (
-                <MenuItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </MenuItem>
-              ))}
-            </TextField>
+              {/* Search by name */}
+              <TextField
+                size="small"
+                placeholder="Tìm kiếm theo tên"
+                value={searchName}
+                onChange={(e) => setSearchName(e.target.value)}
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchOutlined fontSize="small" />
+                      </InputAdornment>
+                    )
+                  }
+                }}
+              />
 
-            {/* Search by name */}
-            <TextField
-              size="small"
-              placeholder="Tìm kiếm theo tên"
-              value={searchName}
-              onChange={(e) => setSearchName(e.target.value)}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchOutlined fontSize="small" />
-                    </InputAdornment>
-                  )
-                }
-              }}
-            />
-
-            {/* Add button */}
-            <Button variant="contained" onClick={handleAdd}>
-              <AddOutlined fontSize="small" />
-              Thêm lớp học mới
-            </Button>
-          </div>
-        </div>
+              {/* Add button */}
+              <Button
+                variant="contained"
+                startIcon={<AddOutlined />}
+                onClick={handleAdd}
+              >
+                Thêm lớp học
+              </Button>
+            </>
+          }
+        />
 
         {/* Table */}
         <DataTable
@@ -240,8 +240,8 @@ const SchoolClassPage = () => {
           rows={filteredSchoolClasses}
           onEdit={handleEdit}
           onDelete={handleDelete}
-        ></DataTable>
-      </main>
+        />
+      </Box>
 
       <FormDialog<SchoolClassFormValues>
         open={open}
@@ -261,7 +261,7 @@ const SchoolClassPage = () => {
         onConfirm={handleDeleteConfirm}
         onClose={() => setDeleteTarget(null)}
       />
-    </div>
+    </Box>
   );
 };
 

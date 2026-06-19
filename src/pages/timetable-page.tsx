@@ -168,8 +168,8 @@ const TimetablePage = () => {
           sx={{
             display: 'flex',
             alignItems: 'center',
-            gap: 2,
-            px: 3,
+            gap: 1.5,
+            px: 4,
             py: 2,
             borderBottom: '1px solid',
             borderColor: 'divider',
@@ -177,7 +177,7 @@ const TimetablePage = () => {
             flexShrink: 0
           }}
         >
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+          <Typography variant="h5" sx={{ color: 'text.primary' }}>
             Thời khóa biểu
           </Typography>
 
@@ -187,10 +187,7 @@ const TimetablePage = () => {
             label="Chọn lớp"
             value={effectiveClassId}
             onChange={(e) => setSelectedClassId(e.target.value)}
-            sx={{
-              minWidth: 160,
-              '& .MuiOutlinedInput-root': { borderRadius: 2 }
-            }}
+            sx={{ minWidth: 160 }}
           >
             {schoolClasses.map((sc) => (
               <MenuItem key={sc.id} value={sc.id}>
@@ -210,9 +207,6 @@ const TimetablePage = () => {
               startIcon={<TuneOutlined />}
               onClick={() => setIsConfigOpen(true)}
               sx={{
-                borderRadius: 2,
-                textTransform: 'none',
-                fontWeight: 600,
                 borderColor: 'divider',
                 color: 'text.secondary',
                 '&:hover': {
@@ -233,12 +227,7 @@ const TimetablePage = () => {
               size="small"
               onClick={handleSolve}
               disabled={isSolving}
-              sx={{
-                borderRadius: 2,
-                textTransform: 'none',
-                fontWeight: 600,
-                px: 2.5
-              }}
+              sx={{ px: 2.5 }}
             >
               {isSolving ? 'Đang xếp lịch...' : 'Tạo thời khóa biểu'}
             </Button>
@@ -249,12 +238,7 @@ const TimetablePage = () => {
               startIcon={<RefreshOutlined />}
               onClick={handleSolve}
               disabled={isSolving}
-              sx={{
-                borderRadius: 2,
-                textTransform: 'none',
-                fontWeight: 600,
-                px: 2.5
-              }}
+              sx={{ px: 2.5 }}
             >
               {isSolving ? 'Đang xếp lại...' : 'Xếp lại thời khóa biểu'}
             </Button>
@@ -269,12 +253,7 @@ const TimetablePage = () => {
                 startIcon={<FileDownloadOutlined />}
                 onClick={handleExportExcel}
                 disabled={!hasSolution}
-                sx={{
-                  borderRadius: 2,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  px: 2.5
-                }}
+                sx={{ px: 2.5 }}
               >
                 Xuất Excel
               </Button>

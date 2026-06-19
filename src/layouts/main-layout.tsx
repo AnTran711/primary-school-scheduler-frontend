@@ -55,12 +55,28 @@ const MainLayout = () => {
   }
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-gray-50">
+    <Box
+      sx={{
+        display: 'flex',
+        height: '100vh',
+        width: '100vw',
+        overflow: 'hidden',
+        bgcolor: 'grey.50'
+      }}
+    >
       <LeftSidebar />
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <Box
+        component="main"
+        sx={{
+          display: 'flex',
+          flex: 1,
+          flexDirection: 'column',
+          overflow: 'hidden'
+        }}
+      >
         <Outlet />
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 };
 

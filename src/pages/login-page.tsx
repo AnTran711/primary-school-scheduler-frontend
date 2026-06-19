@@ -52,7 +52,19 @@ const LoginPage = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        bgcolor: '#f8fafc'
+        background: 'linear-gradient(135deg, #eff6ff 0%, #f8fafc 50%, #f0f9ff 100%)',
+        position: 'relative',
+        overflow: 'hidden',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: '-50%',
+          left: '-50%',
+          width: '200%',
+          height: '200%',
+          background: 'radial-gradient(circle at 30% 30%, rgba(30, 64, 175, 0.04) 0%, transparent 60%), radial-gradient(circle at 70% 70%, rgba(45, 212, 191, 0.04) 0%, transparent 60%)',
+          pointerEvents: 'none'
+        }
       }}
     >
       <Box
@@ -60,18 +72,27 @@ const LoginPage = () => {
         onSubmit={handleSubmit(onSubmit)}
         sx={{
           width: '100%',
-          maxWidth: 400,
-          bgcolor: '#fff',
+          maxWidth: 420,
+          bgcolor: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(20px)',
           borderRadius: 3,
-          boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
-          p: 4
+          boxShadow: '0 8px 40px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05)',
+          border: '1px solid rgba(255,255,255,0.7)',
+          p: 4,
+          position: 'relative',
+          zIndex: 1,
+          animation: 'fadeInUp 0.5s ease-out',
+          '@keyframes fadeInUp': {
+            from: { opacity: 0, transform: 'translateY(16px)' },
+            to: { opacity: 1, transform: 'translateY(0)' }
+          }
         }}
       >
         {/* Logo */}
         <Box sx={{ mb: 3 }}>
           <Typography
             variant="h5"
-            sx={{ fontWeight: 700, color: 'text.primary' }}
+            sx={{ color: 'primary.main' }}
           >
             EduScheduler
           </Typography>
@@ -95,7 +116,7 @@ const LoginPage = () => {
               disabled={isSubmitting}
               error={!!errors.username}
               helperText={errors.username?.message ?? ' '}
-              sx={{ mb: 1, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+              sx={{ mb: 1 }}
             />
           )}
         />
@@ -114,7 +135,7 @@ const LoginPage = () => {
               disabled={isSubmitting}
               error={!!errors.password}
               helperText={errors.password?.message ?? ' '}
-              sx={{ mb: 3, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+              sx={{ mb: 3 }}
               slotProps={{
                 input: {
                   endAdornment: (
@@ -145,10 +166,7 @@ const LoginPage = () => {
           fullWidth
           disabled={isSubmitting}
           sx={{
-            borderRadius: 2,
             py: 1.25,
-            textTransform: 'none',
-            fontWeight: 600,
             fontSize: '0.9375rem'
           }}
         >
