@@ -10,7 +10,9 @@ import {
   AssignmentOutlined,
   AssignmentInd,
   ChevronLeftOutlined,
-  ChevronRightOutlined
+  ChevronRightOutlined,
+  AdminPanelSettingsOutlined,
+  VpnKeyOutlined
 } from '@mui/icons-material';
 import { Avatar, Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { useAuthStore } from '@/stores/auth-store';
@@ -33,6 +35,7 @@ interface NavItem {
   label: string;
   icon: React.ReactNode;
   path: string;
+  adminOnly?: boolean;
 }
 
 // ─── Nav Config ────────────────────────────────────────────────────────────────
@@ -60,6 +63,17 @@ const NAV_ITEMS: NavItem[] = [
     label: 'Phân công giảng dạy',
     icon: <AssignmentInd fontSize="small" />,
     path: '/teaching-assignments'
+  },
+  {
+    label: 'Đổi mật khẩu',
+    icon: <VpnKeyOutlined fontSize="small" />,
+    path: '/change-password'
+  },
+  {
+    label: 'Quản lý người dùng',
+    icon: <AdminPanelSettingsOutlined fontSize="small" />,
+    path: '/users',
+    adminOnly: true
   }
 ];
 
@@ -349,7 +363,13 @@ const LeftSidebar = () => {
           }
         }}
       >
-        {NAV_ITEMS.map((item) => (
+        {NAV_ITEMS.filter((item) => {
+          if (item.adminOnly) {
+            const user = useAuthStore.getState().user;
+            return user?.roles?.includes('ADMIN');
+          }
+          return true;
+        }).map((item) => (
           <SidebarNavItem key={item.path} item={item} collapsed={collapsed} />
         ))}
       </Box>

@@ -8,10 +8,10 @@ export const authApi = {
     return response.data;
   },
 
-  // async changePassword(payload: { oldPassword: string; newPassword: string }) {
-  //   const response = await api.post('/auth/change-password', payload);
-  //   return response.data;
-  // },
+  async changePassword(payload: { oldPassword: string; newPassword: string }) {
+    const response = await api.post('/auth/change-password', payload);
+    return response.data;
+  },
 
   async getCurrentUser() {
     const response = await api.get('/users/my-info');
