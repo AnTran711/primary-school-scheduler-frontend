@@ -20,7 +20,8 @@ import { useSchoolClassStore } from '@/stores/school-class-store';
 import { useTimetableStore } from '@/stores/timetable-store';
 import type {
   GridState,
-  LessonCardData
+  LessonCardData,
+  TimeslotData
 } from '@/types/timetable';
 import {
   extractPinnedItems,
@@ -103,9 +104,26 @@ const TimetablePage = () => {
 
   // ── Solve ──────────────────────────────────────────────────────────────────
 
+  const checkLessonsGreaterThanTimeslots = (timeslots: TimeslotData[]) => {
+    for (const sc of schoolClasses) {
+      const lessonsCount = allCards.filter(
+        (c) => c.schoolClassId === sc.id
+      ).length;
+      if (lessonsCount > timeslots.length) {
+        toast.error(
+          `Lớp ${sc.name} có ${lessonsCount} tiết nhưng chỉ có ${timeslots.length} ô thời khóa biểu. Vui lòng điều chỉnh cấu hình.`
+        );
+        return true;
+      }
+    }
+    return false;
+  };
+
   const handleSolve = () => {
     const timeslots = generateTimeslots(config);
     const pinnedItems = extractPinnedItems(gridState);
+
+    if (checkLessonsGreaterThanTimeslots(timeslots)) return;
 
     solve({ timeslots, pinnedItems }, (result) => {
       // Bắt đầu từ grid trống — API result là source of truth
