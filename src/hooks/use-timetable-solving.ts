@@ -20,7 +20,7 @@ export const useTimetableSolving = () => {
     const { jobId } = res.data;
     toast.info(res.message || 'Thời khóa biểu đang được tạo. Vui lòng đợi.');
 
-    // Polling mỗi 2s để kiểm tra kết quả
+    // Polling mỗi 5s để kiểm tra kết quả
     const poll = async (): Promise<void> => {
       const res = await getSolvingStatusAPI(jobId);
       const job = res.data;
@@ -39,8 +39,8 @@ export const useTimetableSolving = () => {
         return;
       }
 
-      // Còn SOLVING thì chờ 2s rồi poll tiếp
-      await new Promise((r) => setTimeout(r, 2000));
+      // Còn SOLVING thì chờ 5s rồi poll tiếp
+      await new Promise((r) => setTimeout(r, 5000));
       return poll();
     };
 
