@@ -20,6 +20,7 @@ import {
 import { useBranchSchoolStore } from '@/stores/branch-school-store';
 import { useTeacherStore } from '@/stores/teacher-store';
 import PageHeader from '@/components/ui/page-header';
+import { removeVietnameseDiacritics } from '@/utils/search.util';
 
 // ─── Main School Class Page ─────────────────────────────────────────────────────────
 
@@ -166,10 +167,9 @@ const SchoolClassPage = () => {
 
   // Tìm kiếm theo tên và filter theo điểm trường (client-side, filter trên state đã có)
   const filteredSchoolClasses = useMemo(() => {
+    const normalizedSearch = removeVietnameseDiacritics(searchName.toLowerCase());
     return schoolClasses.filter((schoolClass) => {
-      const matchName = schoolClass.name
-        .toLowerCase()
-        .includes(searchName.toLowerCase());
+      const matchName = removeVietnameseDiacritics(schoolClass.name.toLowerCase()).includes(normalizedSearch);
 
       const matchBranchSchool =
         selectedBranchSchoolId === 'all' ||

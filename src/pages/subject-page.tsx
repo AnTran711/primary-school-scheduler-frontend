@@ -18,6 +18,7 @@ import {
   updateSubjectAPI
 } from '@/api/subject.api';
 import PageHeader from '@/components/ui/page-header';
+import { removeVietnameseDiacritics } from '@/utils/search.util';
 
 // ─── Main Subject Page ─────────────────────────────────────────────────────────
 
@@ -128,8 +129,9 @@ const SubjectPage = () => {
   // Tìm kiếm theo tên (client-side, filter trên state đã có)
   const filteredSubjects = useMemo(() => {
     if (searchName.trim() === '') return subjects;
+    const normalizedSearch = removeVietnameseDiacritics(searchName.toLowerCase());
     return subjects.filter((subject) =>
-      subject.name.toLowerCase().includes(searchName.toLowerCase())
+      removeVietnameseDiacritics(subject.name.toLowerCase()).includes(normalizedSearch)
     );
   }, [searchName, subjects]);
 

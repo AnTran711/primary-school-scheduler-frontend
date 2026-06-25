@@ -23,6 +23,7 @@ import {
   updateUserAPI
 } from '@/api/user.api';
 import type { UserFormValues } from '@/schemas/user.schema';
+import { removeVietnameseDiacritics } from '@/utils/search.util';
 
 // ─── Role helpers ─────────────────────────────────────────────────────────────
 const roleLabelMap: Record<
@@ -92,8 +93,9 @@ const UserManagementPage = () => {
   // Filtered users
   const filteredUsers = useMemo(() => {
     if (!searchName.trim()) return users;
+    const normalizedSearch = removeVietnameseDiacritics(searchName.toLowerCase());
     return users.filter((u) =>
-      u.username.toLowerCase().includes(searchName.toLowerCase())
+      removeVietnameseDiacritics(u.username.toLowerCase()).includes(normalizedSearch)
     );
   }, [searchName, users]);
 

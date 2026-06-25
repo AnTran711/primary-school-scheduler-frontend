@@ -18,6 +18,7 @@ import {
   updateBranchSchoolAPI
 } from '@/api/branch-school.api';
 import PageHeader from '@/components/ui/page-header';
+import { removeVietnameseDiacritics } from '@/utils/search.util';
 
 // ─── Main Branch School Page ─────────────────────────────────────────────────────────
 
@@ -130,8 +131,9 @@ const BranchSchoolPage = () => {
   // Tìm kiếm theo tên (client-side, filter trên state đã có)
   const filteredBranchSchools = useMemo(() => {
     if (searchName.trim() === '') return branchSchools;
+    const normalizedSearch = removeVietnameseDiacritics(searchName.toLowerCase());
     return branchSchools.filter((branchSchool) =>
-      branchSchool.name.toLowerCase().includes(searchName.toLowerCase())
+      removeVietnameseDiacritics(branchSchool.name.toLowerCase()).includes(normalizedSearch)
     );
   }, [searchName, branchSchools]);
 

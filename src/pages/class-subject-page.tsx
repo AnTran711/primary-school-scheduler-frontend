@@ -30,6 +30,7 @@ import {
 import type { ColumnDef } from '@/components/ui/data-table';
 import DataTable from '@/components/ui/data-table';
 import PageHeader from '@/components/ui/page-header';
+import { removeVietnameseDiacritics } from '@/utils/search.util';
 
 const ClassSubjectPage = () => {
   const schoolClasses = useSchoolClassStore((state) => state.schoolClasses);
@@ -85,10 +86,12 @@ const ClassSubjectPage = () => {
     [classSubjects]
   );
 
+  // Tìm kiếm theo tên (client-side, filter trên state đã có)
   const filteredClassSubjects = useMemo(() => {
     if (!searchName.trim()) return classSubjects;
+    const normalizedSearch = removeVietnameseDiacritics(searchName.toLowerCase());
     return classSubjects.filter((cs) =>
-      cs.subjectName.toLowerCase().includes(searchName.toLowerCase())
+      removeVietnameseDiacritics(cs.subjectName.toLowerCase()).includes(normalizedSearch)
     );
   }, [searchName, classSubjects]);
 

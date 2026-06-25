@@ -18,6 +18,7 @@ import {
 import { toast } from 'react-toastify';
 import DeleteDialog from '@/components/ui/delete-dialog';
 import PageHeader from '@/components/ui/page-header';
+import { removeVietnameseDiacritics } from '@/utils/search.util';
 
 // ─── Main Teacher Page ─────────────────────────────────────────────────────────
 
@@ -135,11 +136,12 @@ const TeacherPage = () => {
     }
   };
 
-  // Tìm kiếm theo tên (client-side, filter trên state đã có)
+  // Tìm kiếm theo tên (client-side, filter trên state đã có, hỗ trợ không dấu)
   const filteredTeachers = useMemo(() => {
     if (searchName.trim() === '') return teachers;
+    const normalizedSearch = removeVietnameseDiacritics(searchName.toLowerCase());
     return teachers.filter((teacher) =>
-      teacher.name.toLowerCase().includes(searchName.toLowerCase())
+      removeVietnameseDiacritics(teacher.name.toLowerCase()).includes(normalizedSearch)
     );
   }, [searchName, teachers]);
 
