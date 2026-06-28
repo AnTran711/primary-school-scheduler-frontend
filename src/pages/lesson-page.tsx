@@ -162,7 +162,14 @@ const LessonPage = () => {
             {/* Cột trái — danh sách môn học */}
             <Paper
               variant="outlined"
-              sx={{ borderRadius: 2, overflow: 'hidden' }}
+              sx={{
+                borderRadius: 2,
+                overflow: 'hidden',
+                maxHeight: 'calc(100vh - 200px)',
+                overflowY: 'auto',
+                position: 'sticky',
+                top: 16
+              }}
             >
               <Box
                 sx={{
