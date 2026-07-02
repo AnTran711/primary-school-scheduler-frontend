@@ -11,9 +11,9 @@ export const fetchLessonsByClassSubjectAPI = async (classSubjectId: string) => {
   return res;
 };
 
-// Lấy lesson overview của tất cả lớp, sử dụng cho trang Timetable
-export const fetchLessonsOverviewAPI = async () => {
-  const res = await api.get('/lessons/overview');
+// Lấy lesson overview theo lớp, sử dụng cho trang Timetable (lazy-load)
+export const fetchLessonsOverviewByClassAPI = async (schoolClassId: string) => {
+  const res = await api.get(`/lessons/overview?schoolClassId=${schoolClassId}`);
 
   return res;
 };

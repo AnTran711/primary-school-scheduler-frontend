@@ -23,9 +23,7 @@ const UnplacedCardsPanel = ({
   gridState
 }: UnplacedCardsPanelProps) => {
   const unplaced = getUnplacedCards(allCards, gridState, schoolClassId);
-  const total = allCards.filter(
-    (c) => c.schoolClassId === schoolClassId
-  ).length;
+  const total = allCards.length;
   const placed = total - unplaced.length;
 
   // Toàn bộ panel là 1 droptable
@@ -131,9 +129,7 @@ const UnplacedCardsPanel = ({
             </Typography>
           </Box>
         ) : (
-          unplaced.map((card) => (
-            <LessonCard key={card.id} card={card} />
-          ))
+          unplaced.map((card) => <LessonCard key={card.id} card={card} />)
         )}
       </Box>
     </Box>

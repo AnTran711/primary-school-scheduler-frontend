@@ -20,13 +20,16 @@ export const DEFAULT_CONFIG: TimetableConfig = {
 interface TimetableState {
   // State
   config: TimetableConfig;
-  allCards: LessonCardData[];
+  classCardsMap: Record<string, LessonCardData[]>; // key = schoolClassId
+  loadedClassIds: Set<string>; // track đã load những lớp nào
   gridState: GridState;
   hasSolution: boolean;
 
   // Actions
   setConfig: (config: TimetableConfig) => void;
-  setAllCards: (cards: LessonCardData[]) => void;
+  setClassCards: (classId: string, cards: LessonCardData[]) => void;
+  setClassCardsMap: (map: Record<string, LessonCardData[]>) => void;
+  getCardsForClass: (classId: string) => LessonCardData[];
   setGridState: (grid: GridState) => void;
   updateGridState: (updater: (prev: GridState) => GridState) => void;
   setHasSolution: (v: boolean) => void;
@@ -40,7 +43,8 @@ export const useTimetableStore = create<TimetableState>()(
     (set, get) => ({
       // ── Initial State ─────────────────────────────────────────────────
       config: DEFAULT_CONFIG,
-      allCards: [],
+      classCardsMap: {},
+      loadedClassIds: new Set<string>(),
       gridState: {},
       hasSolution: false,
 
@@ -48,7 +52,19 @@ export const useTimetableStore = create<TimetableState>()(
 
       setConfig: (config) => set({ config }),
 
-      setAllCards: (cards) => set({ allCards: cards }),
+      setClassCards: (classId, cards) =>
+        set((state) => ({
+          classCardsMap: { ...state.classCardsMap, [classId]: cards },
+          loadedClassIds: new Set([...state.loadedClassIds, classId])
+        })),
+
+      setClassCardsMap: (map) =>
+        set({
+          classCardsMap: map,
+          loadedClassIds: new Set(Object.keys(map))
+        }),
+
+      getCardsForClass: (classId) => get().classCardsMap[classId] ?? [],
 
       setGridState: (gridState) => set({ gridState }),
 
@@ -58,12 +74,19 @@ export const useTimetableStore = create<TimetableState>()(
       setHasSolution: (hasSolution) => set({ hasSolution }),
 
       togglePin: (cardId) => {
-        const { allCards, gridState } = get();
+        const { classCardsMap, gridState } = get();
 
-        // Toggle trong allCards
-        const nextCards = allCards.map((c) =>
-          c.id === cardId ? { ...c, isPinned: !c.isPinned } : c
-        );
+        // Toggle trong classCardsMap
+        const nextCardsMap = { ...classCardsMap };
+        for (const [classId, cards] of Object.entries(nextCardsMap)) {
+          const idx = cards.findIndex((c) => c.id === cardId);
+          if (idx !== -1) {
+            nextCardsMap[classId] = cards.map((c) =>
+              c.id === cardId ? { ...c, isPinned: !c.isPinned } : c
+            );
+            break;
+          }
+        }
 
         // Toggle trong gridState
         const nextGrid = { ...gridState };
@@ -71,7 +94,7 @@ export const useTimetableStore = create<TimetableState>()(
           if (v?.id === cardId) nextGrid[k] = { ...v, isPinned: !v.isPinned };
         }
 
-        set({ allCards: nextCards, gridState: nextGrid });
+        set({ classCardsMap: nextCardsMap, gridState: nextGrid });
       }
     }),
     {

@@ -18,16 +18,13 @@ import {
 import { toast } from 'react-toastify';
 import { useSchoolClassStore } from '@/stores/school-class-store';
 import { useTimetableStore } from '@/stores/timetable-store';
-import type {
-  GridState,
-  LessonCardData,
-  TimeslotData
-} from '@/types/timetable';
+import type { GridState, LessonCardData } from '@/types/timetable';
 import {
   extractPinnedItems,
   generateLessonCards,
   generateTimeslots,
-  getCellId
+  getCellId,
+  getColorIndex
 } from '@/utils/timetable.util';
 import TimetableConfigPanel from '@/components/ui/timetable-config-panel';
 import UnplacedCardsPanel from '@/components/ui/unplaced-cards-panel';
@@ -35,7 +32,7 @@ import TimetableGrid from '@/components/ui/timetable-grid';
 import LessonCard from '@/components/ui/lesson-card';
 import { useTimetableDnd } from '@/hooks/use-timetable-dnd';
 import { useTimetableExcel } from '@/hooks/use-timetable-excel';
-import { fetchLessonsOverviewAPI } from '@/api/lesson.api';
+import { fetchLessonsOverviewByClassAPI } from '@/api/lesson.api';
 import { useTimetableSolving } from '@/hooks/use-timetable-solving';
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -48,8 +45,10 @@ const TimetablePage = () => {
   // ── State từ store ──────────────────────────────────────────────────────────
   const config = useTimetableStore((s) => s.config);
   const setConfig = useTimetableStore((s) => s.setConfig);
-  const allCards = useTimetableStore((s) => s.allCards);
-  const setAllCards = useTimetableStore((s) => s.setAllCards);
+  const loadedClassIds = useTimetableStore((s) => s.loadedClassIds);
+  const setClassCards = useTimetableStore((s) => s.setClassCards);
+  const setClassCardsMap = useTimetableStore((s) => s.setClassCardsMap);
+  const getCardsForClass = useTimetableStore((s) => s.getCardsForClass);
   const gridState = useTimetableStore((s) => s.gridState);
   const setGridState = useTimetableStore((s) => s.setGridState);
   const updateGridState = useTimetableStore((s) => s.updateGridState);
@@ -79,20 +78,21 @@ const TimetablePage = () => {
     init();
   }, [schoolClasses]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Load tất cả lessons một lần khi mount
+  // Load lessons theo lớp đang chọn (lazy-load, có cache)
   useEffect(() => {
+    if (!effectiveClassId || loadedClassIds.has(effectiveClassId)) return;
     const load = async () => {
       setIsLoadingLessons(true);
       try {
-        const res = await fetchLessonsOverviewAPI();
+        const res = await fetchLessonsOverviewByClassAPI(effectiveClassId);
         const cards = generateLessonCards(res.data);
-        setAllCards(cards);
+        setClassCards(effectiveClassId, cards);
       } finally {
         setIsLoadingLessons(false);
       }
     };
     load();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [effectiveClassId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── DnD (hook tách riêng) ─────────────────────────────────────────────────
 
@@ -104,54 +104,53 @@ const TimetablePage = () => {
 
   // ── Solve ──────────────────────────────────────────────────────────────────
 
-  const checkLessonsGreaterThanTimeslots = (timeslots: TimeslotData[]) => {
-    for (const sc of schoolClasses) {
-      const lessonsCount = allCards.filter(
-        (c) => c.schoolClassId === sc.id
-      ).length;
-      if (lessonsCount > timeslots.length) {
-        toast.error(
-          `Lớp ${sc.name} có ${lessonsCount} tiết nhưng chỉ có ${timeslots.length} ô thời khóa biểu. Vui lòng điều chỉnh cấu hình.`
-        );
-        return true;
-      }
-    }
-    return false;
-  };
-
   const handleSolve = () => {
     const timeslots = generateTimeslots(config);
     const pinnedItems = extractPinnedItems(gridState);
 
-    if (checkLessonsGreaterThanTimeslots(timeslots)) return;
-
     solve({ timeslots, pinnedItems }, (result) => {
       // Bắt đầu từ grid trống — API result là source of truth
       const newGrid: GridState = {};
-      const usedCardIds = new Set<string>();
+      // Build classCardsMap mới từ kết quả solve
+      const newClassCardsMap: Record<string, LessonCardData[]> = {};
+      let cardCounter = 0;
 
       for (const lesson of result.lessons) {
-        if (!lesson.dayOfWeek || !lesson.shift || !lesson.period) continue;
-        const cellId = getCellId(
-          lesson.schoolClassId,
-          lesson.dayOfWeek,
-          lesson.shift,
-          lesson.period
-        );
+        // Tạo card trực tiếp từ lesson response
+        const card: LessonCardData = {
+          id: `${lesson.classSubjectId}-${lesson.teacherId}-${cardCounter++}`,
+          classSubjectId: lesson.classSubjectId,
+          subjectName: lesson.subjectName,
+          schoolClassId: lesson.schoolClassId,
+          className: lesson.className,
+          teacherId: lesson.teacherId,
+          teacherName: lesson.teacherName,
+          isPinned: lesson.pinned,
+          colorIndex: getColorIndex(lesson.classSubjectId)
+        };
 
-        // Tìm card chưa được dùng ứng với lesson
-        const card = allCards.find(
-          (c) =>
-            c.classSubjectId === lesson.classSubjectId &&
-            c.teacherId === lesson.teacherId &&
-            !usedCardIds.has(c.id)
-        );
-        if (card) {
-          usedCardIds.add(card.id);
-          newGrid[cellId] = { ...card, isPinned: lesson.pinned };
+        // Gắn vào grid nếu có timeslot
+        if (lesson.dayOfWeek && lesson.shift && lesson.period) {
+          const cellId = getCellId(
+            lesson.schoolClassId,
+            lesson.dayOfWeek,
+            lesson.shift,
+            lesson.period
+          );
+          newGrid[cellId] = card;
         }
+
+        // Đồng thời build classCardsMap từ kết quả
+        if (!newClassCardsMap[lesson.schoolClassId]) {
+          newClassCardsMap[lesson.schoolClassId] = [];
+        }
+        newClassCardsMap[lesson.schoolClassId].push(card);
       }
+
       setGridState(newGrid);
+      // Cập nhật toàn bộ classCardsMap với dữ liệu từ solve result
+      // để UnplacedCardsPanel hiển thị chính xác
+      setClassCardsMap(newClassCardsMap);
       setHasSolution(true);
       toast.success('Xếp thời khóa biểu thành công!');
     });
@@ -168,6 +167,7 @@ const TimetablePage = () => {
   // ── Computed ──────────────────────────────────────────────────────────────
 
   const selectedClass = schoolClasses.find((sc) => sc.id === effectiveClassId);
+  const currentClassCards = getCardsForClass(effectiveClassId);
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -317,7 +317,7 @@ const TimetablePage = () => {
               ) : (
                 <UnplacedCardsPanel
                   schoolClassId={effectiveClassId}
-                  allCards={allCards}
+                  allCards={currentClassCards}
                   gridState={gridState}
                 />
               )}

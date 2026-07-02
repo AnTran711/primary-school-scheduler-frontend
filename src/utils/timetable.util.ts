@@ -63,6 +63,16 @@ export const CARD_COLORS = [
   { bg: '#fff1f2', border: '#fda4af', text: '#9f1239' }
 ];
 
+// ─── Color index helper (hash-based, consistent regardless of load order) ────
+
+export const getColorIndex = (classSubjectId: string): number => {
+  let hash = 0;
+  for (let i = 0; i < classSubjectId.length; i++) {
+    hash = ((hash << 5) - hash + classSubjectId.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash) % CARD_COLORS.length;
+};
+
 // ─── Timeslot generation ──────────────────────────────────────────────────────
 
 export const generateTimeslots = (config: TimetableConfig): TimeslotData[] => {
@@ -108,15 +118,8 @@ export const parseCellId = (cellId: string) => {
 export const generateLessonCards = (
   lessons: LessonOverview[]
 ): LessonCardData[] => {
-  const colorMap = new Map<string, number>();
-  let colorIdx = 0;
-
   return lessons.flatMap((lesson) => {
-    if (!colorMap.has(lesson.classSubjectId)) {
-      colorMap.set(lesson.classSubjectId, colorIdx % CARD_COLORS.length);
-      colorIdx++;
-    }
-    const color = colorMap.get(lesson.classSubjectId)!;
+    const color = getColorIndex(lesson.classSubjectId);
 
     return Array.from({ length: lesson.lessonCount }, (_, i) => ({
       id: `${lesson.classSubjectId}-${lesson.teacherId}-${i}`,
