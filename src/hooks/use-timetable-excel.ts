@@ -22,12 +22,51 @@ interface UseTimetableExcelProps {
   gridState: GridState;
 }
 
+/**
+ * Kiểm tra có đang chạy trong Tauri hay không
+ */
+const isTauri = (): boolean => {
+  return '__TAURI_INTERNALS__' in window;
+};
+
+/**
+ * Lưu file Excel — dùng Tauri dialog "Save As" nếu chạy trong desktop app,
+ * hoặc dùng browser download nếu chạy trên trình duyệt.
+ */
+const saveExcelFile = async (wb: XLSX.WorkBook, defaultFileName: string) => {
+  if (isTauri()) {
+    // Tauri: dùng dialog "Save As" + plugin fs để ghi file
+    const { save } = await import('@tauri-apps/plugin-dialog');
+    const { writeFile } = await import('@tauri-apps/plugin-fs');
+
+    const filePath = await save({
+      title: 'Lưu file thời khoá biểu',
+      defaultPath: defaultFileName,
+      filters: [
+        {
+          name: 'Excel Files',
+          extensions: ['xlsx']
+        }
+      ]
+    });
+
+    if (filePath) {
+      // Tạo Uint8Array từ workbook
+      const buffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      await writeFile(filePath, new Uint8Array(buffer));
+    }
+  } else {
+    // Trình duyệt: dùng XLSX.writeFile bình thường
+    XLSX.writeFile(wb, defaultFileName);
+  }
+};
+
 export const useTimetableExcel = ({
   schoolClasses,
   config,
   gridState
 }: UseTimetableExcelProps) => {
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     const wb = XLSX.utils.book_new();
     const days = ALL_DAYS.slice(0, config.numberOfDays);
     const morningPeriods = ALL_PERIODS.slice(0, config.morningPeriods);
@@ -250,7 +289,7 @@ export const useTimetableExcel = ({
       XLSX.utils.book_append_sheet(wb, classSheet, sheetName);
     }
 
-    XLSX.writeFile(wb, 'thoikhoabieu.xlsx');
+    await saveExcelFile(wb, 'thoikhoabieu.xlsx');
   };
 
   return { handleExportExcel };

@@ -1,4 +1,4 @@
-import { useAuthStore } from '@/stores/auth-store';
+import { useAuthStore, isTokenExpired } from '@/stores/auth-store';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
@@ -13,8 +13,14 @@ const api = axios.create({
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
-    const token = useAuthStore.getState().token;
+    const { token, logout } = useAuthStore.getState();
+
     if (token) {
+      // Chỉ kiểm tra hết hạn khi đã có token (bỏ qua cho request login)
+      if (isTokenExpired(token)) {
+        logout();
+        return Promise.reject(new axios.Cancel('Token đã hết hạn'));
+      }
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -26,11 +32,28 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response.data,
   (error) => {
-    // handle global error
+    // console.log('Adapter used:', error.config?.adapter);
+
+    console.log(error.code);
+    console.log(error.message);
+    console.log(error.response);
+    console.log(error.request);
+
+    // Nếu request bị cancel do token hết hạn thì không hiện toast
+    if (axios.isCancel(error)) {
+      return Promise.reject(error);
+    }
+
+    // Handle 401 Unauthorized
     if (error.response && error.response.status === 401) {
       const { logout } = useAuthStore.getState();
       logout();
-      window.location.href = '/login';
+      return Promise.reject(error);
+    }
+
+    // Bỏ qua toast nếu request đánh dấu skipErrorToast
+    if (error.config?.skipErrorToast) {
+      return Promise.reject(error);
     }
 
     let message = error.message || 'An error occurred. Please try again.';

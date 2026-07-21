@@ -13,5 +13,10 @@ export default defineConfig({
   },
   define: {
     global: {}
+  },
+  server: {
+    watch: {
+      ignored: ["**/src-tauri/**"]
+    }
   }
 });
