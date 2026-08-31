@@ -21,7 +21,7 @@ interface TimetableState {
   // State
   config: TimetableConfig;
   classCardsMap: Record<string, LessonCardData[]>; // key = schoolClassId
-  loadedClassIds: Set<string>; // track đã load những lớp nào
+  loadedClassIds: Set<string>; // track đã load những lớp nào (runtime only, không persist)
   gridState: GridState;
   hasSolution: boolean;
 
@@ -34,6 +34,7 @@ interface TimetableState {
   updateGridState: (updater: (prev: GridState) => GridState) => void;
   setHasSolution: (v: boolean) => void;
   togglePin: (cardId: string) => void;
+  clearSavedTimetable: () => void;
 }
 
 // ─── Store ────────────────────────────────────────────────────────────────────
@@ -95,14 +96,23 @@ export const useTimetableStore = create<TimetableState>()(
         }
 
         set({ classCardsMap: nextCardsMap, gridState: nextGrid });
-      }
+      },
+
+      clearSavedTimetable: () =>
+        set({
+          gridState: {},
+          hasSolution: false
+        })
     }),
     {
-      name: 'timetable-config-storage',
+      name: 'timetable-storage',
       storage: createJSONStorage(() => localStorage),
-      // Chỉ persist config vào localStorage
+      // Chỉ persist config, gridState, hasSolution
+      // KHÔNG persist classCardsMap và loadedClassIds → luôn fetch fresh từ API
       partialize: (state) => ({
-        config: state.config
+        config: state.config,
+        gridState: state.gridState,
+        hasSolution: state.hasSolution
       })
     }
   )

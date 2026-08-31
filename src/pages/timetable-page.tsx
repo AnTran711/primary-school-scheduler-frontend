@@ -11,6 +11,7 @@ import {
   Typography
 } from '@mui/material';
 import {
+  DeleteOutlined,
   FileDownloadOutlined,
   TuneOutlined,
   RefreshOutlined
@@ -24,7 +25,8 @@ import {
   generateLessonCards,
   generateTimeslots,
   getCellId,
-  getColorIndex
+  getColorIndex,
+  reconcileGridWithFreshCards
 } from '@/utils/timetable.util';
 import TimetableConfigPanel from '@/components/ui/timetable-config-panel';
 import UnplacedCardsPanel from '@/components/ui/unplaced-cards-panel';
@@ -46,6 +48,7 @@ const TimetablePage = () => {
   const config = useTimetableStore((s) => s.config);
   const setConfig = useTimetableStore((s) => s.setConfig);
   const loadedClassIds = useTimetableStore((s) => s.loadedClassIds);
+  const gridStateForReconcile = useTimetableStore((s) => s.gridState);
   const setClassCards = useTimetableStore((s) => s.setClassCards);
   const setClassCardsMap = useTimetableStore((s) => s.setClassCardsMap);
   const getCardsForClass = useTimetableStore((s) => s.getCardsForClass);
@@ -55,6 +58,7 @@ const TimetablePage = () => {
   const hasSolution = useTimetableStore((s) => s.hasSolution);
   const setHasSolution = useTimetableStore((s) => s.setHasSolution);
   const togglePin = useTimetableStore((s) => s.togglePin);
+  const clearSavedTimetable = useTimetableStore((s) => s.clearSavedTimetable);
 
   // ── Local UI state ──────────────────────────────────────────────────────────
   const [selectedClassId, setSelectedClassId] = useState('');
@@ -78,7 +82,9 @@ const TimetablePage = () => {
     init();
   }, [schoolClasses]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Load lessons theo lớp đang chọn (lazy-load, có cache)
+  // Load lessons theo lớp đang chọn (lazy-load, có cache trong session)
+  // loadedClassIds chỉ tồn tại trong runtime (không persist)
+  // → mỗi lần mở app sẽ fetch fresh từ API
   useEffect(() => {
     if (!effectiveClassId || loadedClassIds.has(effectiveClassId)) return;
     const load = async () => {
@@ -87,6 +93,19 @@ const TimetablePage = () => {
         const res = await fetchLessonsOverviewByClassAPI(effectiveClassId);
         const cards = generateLessonCards(res.data);
         setClassCards(effectiveClassId, cards);
+
+        // Reconcile gridState với fresh cards:
+        // - Xóa card không còn tồn tại (lesson bị xóa ở backend)
+        // - Cập nhật info thay đổi (đổi GV, đổi tên môn)
+        // - Giữ nguyên vị trí card hợp lệ
+        const reconciledGrid = reconcileGridWithFreshCards(
+          gridStateForReconcile,
+          cards,
+          effectiveClassId
+        );
+        if (reconciledGrid !== gridStateForReconcile) {
+          setGridState(reconciledGrid);
+        }
       } finally {
         setIsLoadingLessons(false);
       }
@@ -113,12 +132,18 @@ const TimetablePage = () => {
       const newGrid: GridState = {};
       // Build classCardsMap mới từ kết quả solve
       const newClassCardsMap: Record<string, LessonCardData[]> = {};
-      let cardCounter = 0;
+      // Per-combo counter → ID deterministic, khớp với generateLessonCards
+      const counterMap = new Map<string, number>();
 
       for (const lesson of result.lessons) {
+        // Per-combo counter cho ID nhất quán
+        const comboKey = `${lesson.classSubjectId}-${lesson.teacherId}`;
+        const idx = counterMap.get(comboKey) ?? 0;
+        counterMap.set(comboKey, idx + 1);
+
         // Tạo card trực tiếp từ lesson response
         const card: LessonCardData = {
-          id: `${lesson.classSubjectId}-${lesson.teacherId}-${cardCounter++}`,
+          id: `${comboKey}-${idx}`,
           classSubjectId: lesson.classSubjectId,
           subjectName: lesson.subjectName,
           schoolClassId: lesson.schoolClassId,
@@ -216,6 +241,24 @@ const TimetablePage = () => {
 
           {/* Spacer */}
           <Box sx={{ flex: 1 }} />
+
+          {/* Nút xóa thời khóa biểu */}
+          <Tooltip title={!hasSolution ? 'Chưa có thời khóa biểu để xóa' : 'Xóa thời khóa biểu hiện tại'}>
+            <Button
+              variant="outlined"
+              color="error"
+              size="small"
+              startIcon={<DeleteOutlined />}
+              disabled={!hasSolution}
+              onClick={() => {
+                clearSavedTimetable();
+                toast.success('Đã xóa thời khóa biểu.');
+              }}
+              sx={{ px: 2.5 }}
+            >
+              Xóa TKB
+            </Button>
+          </Tooltip>
 
           {/* Nút cấu hình */}
           <Tooltip title="Cấu hình khung thời khóa biểu">

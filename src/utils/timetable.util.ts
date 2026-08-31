@@ -206,3 +206,53 @@ export const getUnplacedCards = (
     (c) => c.schoolClassId === schoolClassId && !placedIds.has(c.id)
   );
 };
+
+// ─── Reconcile grid with fresh cards ─────────────────────────────────────────
+// Sau khi fetch fresh cards cho 1 lớp, đồng bộ gridState:
+// - Card trong grid không còn tồn tại (lesson bị xóa) → xóa khỏi grid
+// - Card có thay đổi thông tin (đổi GV, đổi tên môn) → cập nhật info, giữ vị trí
+// - Card mới chưa có trong grid → tự động hiện ở UnplacedCardsPanel (derive)
+
+export const reconcileGridWithFreshCards = (
+  gridState: GridState,
+  freshCards: LessonCardData[],
+  schoolClassId: string
+): GridState => {
+  // Build lookup: id → fresh card data
+  const freshCardMap = new Map<string, LessonCardData>();
+  for (const card of freshCards) {
+    freshCardMap.set(card.id, card);
+  }
+
+  const newGrid: GridState = { ...gridState };
+  let hasChanges = false;
+
+  for (const [cellId, gridCard] of Object.entries(newGrid)) {
+    if (!gridCard || gridCard.schoolClassId !== schoolClassId) continue;
+
+    const freshCard = freshCardMap.get(gridCard.id);
+
+    if (!freshCard) {
+      // Card không còn tồn tại trong fresh data → xóa khỏi grid
+      newGrid[cellId] = null;
+      hasChanges = true;
+    } else if (
+      // Card tồn tại nhưng có thay đổi thông tin → cập nhật, giữ vị trí & pin
+      freshCard.subjectName !== gridCard.subjectName ||
+      freshCard.teacherName !== gridCard.teacherName ||
+      freshCard.className !== gridCard.className ||
+      freshCard.teacherId !== gridCard.teacherId ||
+      freshCard.classSubjectId !== gridCard.classSubjectId ||
+      freshCard.colorIndex !== gridCard.colorIndex
+    ) {
+      newGrid[cellId] = {
+        ...freshCard,
+        isPinned: gridCard.isPinned // giữ trạng thái pin từ grid
+      };
+      hasChanges = true;
+    }
+  }
+
+  return hasChanges ? newGrid : gridState;
+};
+
