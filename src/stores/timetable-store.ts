@@ -12,7 +12,8 @@ export const DEFAULT_CONFIG: TimetableConfig = {
   numberOfDays: 5,
   morningPeriods: 5,
   hasAfternoon: false,
-  afternoonPeriods: 3
+  afternoonPeriods: 3,
+  excludedTimeslots: []
 };
 
 // ─── Store interface ──────────────────────────────────────────────────────────
@@ -107,13 +108,26 @@ export const useTimetableStore = create<TimetableState>()(
     {
       name: 'timetable-storage',
       storage: createJSONStorage(() => localStorage),
+      version: 1, // bump khi thêm field mới vào config
       // Chỉ persist config, gridState, hasSolution
       // KHÔNG persist classCardsMap và loadedClassIds → luôn fetch fresh từ API
       partialize: (state) => ({
         config: state.config,
         gridState: state.gridState,
         hasSolution: state.hasSolution
-      })
+      }),
+      // Merge persisted state với default để bổ sung field mới (ví dụ excludedTimeslots)
+      merge: (persisted, current) => {
+        const p = persisted as Partial<TimetableState>;
+        return {
+          ...current,
+          ...p,
+          config: {
+            ...DEFAULT_CONFIG,
+            ...p.config
+          }
+        };
+      }
     }
   )
 );

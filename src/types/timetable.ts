@@ -17,6 +17,7 @@ export interface TimetableConfig {
   morningPeriods: number;
   hasAfternoon: boolean;
   afternoonPeriods: number;
+  excludedTimeslots: string[]; // keys dạng `${day}__${shift}__${period}` — các timeslot bị loại khỏi lịch
 }
 
 // ─── Timeslot ─────────────────────────────────────────────────────────────────

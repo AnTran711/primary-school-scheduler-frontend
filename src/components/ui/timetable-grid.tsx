@@ -9,10 +9,12 @@ import {
   ALL_PERIODS,
   DAY_LABELS,
   getCellId,
+  getTimeslotKey,
   PERIOD_LABELS,
   SHIFT_LABELS
 } from '@/utils/timetable.util';
 import { Box, Typography } from '@mui/material';
+import { useMemo } from 'react';
 import DroppableCell from './droppable-cell';
 
 interface TimetableGridProps {
@@ -36,6 +38,11 @@ const TimetableGrid = ({
   const afternoonPeriods = config.hasAfternoon
     ? ALL_PERIODS.slice(0, config.afternoonPeriods)
     : [];
+
+  const excludedSet = useMemo(
+    () => new Set(config.excludedTimeslots),
+    [config.excludedTimeslots]
+  );
 
   // Dùng 1fr để grid tự chia đều không gian, tránh scroll ngang
   const gridTemplate = `${LABEL_W}px repeat(${days.length}, 1fr)`;
@@ -104,6 +111,36 @@ const TimetableGrid = ({
 
           {days.map((day) => {
             const cellId = getCellId(schoolClassId, day, shift, period);
+            const isExcluded = excludedSet.has(getTimeslotKey(day, shift, period));
+
+            if (isExcluded) {
+              return (
+                <Box
+                  key={cellId}
+                  sx={{
+                    minHeight: 60,
+                    border: '1px dashed',
+                    borderColor: '#e5e7eb',
+                    borderRadius: 1,
+                    bgcolor: '#f9fafb',
+                    backgroundImage:
+                      'repeating-linear-gradient(135deg, transparent, transparent 4px, #e5e7eb40 4px, #e5e7eb40 5px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    opacity: 0.6
+                  }}
+                >
+                  <Typography
+                    variant="caption"
+                    sx={{ color: '#9ca3af', fontSize: '0.65rem', fontStyle: 'italic' }}
+                  >
+                    Nghỉ
+                  </Typography>
+                </Box>
+              );
+            }
+
             const card = gridState[cellId] ?? null;
             return (
               <DroppableCell

@@ -73,6 +73,14 @@ export const getColorIndex = (classSubjectId: string): number => {
   return Math.abs(hash) % CARD_COLORS.length;
 };
 
+// ─── Timeslot key helper ──────────────────────────────────────────────────────
+
+export const getTimeslotKey = (
+  day: DayOfWeek,
+  shift: Shift,
+  period: Period
+): string => `${day}__${shift}__${period}`;
+
 // ─── Timeslot generation ──────────────────────────────────────────────────────
 
 export const generateTimeslots = (config: TimetableConfig): TimeslotData[] => {
@@ -82,13 +90,19 @@ export const generateTimeslots = (config: TimetableConfig): TimeslotData[] => {
     ? ALL_PERIODS.slice(0, config.afternoonPeriods)
     : [];
 
+  const excluded = new Set(config.excludedTimeslots);
+
   const timeslots: TimeslotData[] = [];
   for (const dayOfWeek of days) {
     for (const period of morningPeriods) {
-      timeslots.push({ dayOfWeek, shift: 'MORNING', period });
+      if (!excluded.has(getTimeslotKey(dayOfWeek, 'MORNING', period))) {
+        timeslots.push({ dayOfWeek, shift: 'MORNING', period });
+      }
     }
     for (const period of afternoonPeriods) {
-      timeslots.push({ dayOfWeek, shift: 'AFTERNOON', period });
+      if (!excluded.has(getTimeslotKey(dayOfWeek, 'AFTERNOON', period))) {
+        timeslots.push({ dayOfWeek, shift: 'AFTERNOON', period });
+      }
     }
   }
   return timeslots;
