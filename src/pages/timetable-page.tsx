@@ -36,6 +36,7 @@ import { useTimetableDnd } from '@/hooks/use-timetable-dnd';
 import { useTimetableExcel } from '@/hooks/use-timetable-excel';
 import { fetchLessonsOverviewByClassAPI } from '@/api/lesson.api';
 import { useTimetableSolving } from '@/hooks/use-timetable-solving';
+import DeleteDialog from '@/components/ui/delete-dialog';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -64,6 +65,7 @@ const TimetablePage = () => {
   const [selectedClassId, setSelectedClassId] = useState('');
   const [isLoadingLessons, setIsLoadingLessons] = useState(false);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   // ── Fix lỗi useEffect cascading renders ──────────────────────────────────
   // Dùng useMemo để derive effectiveClassId thay vì setState trong effect
@@ -250,10 +252,7 @@ const TimetablePage = () => {
               size="small"
               startIcon={<DeleteOutlined />}
               disabled={!hasSolution}
-              onClick={() => {
-                clearSavedTimetable();
-                toast.success('Đã xóa thời khóa biểu.');
-              }}
+              onClick={() => setIsDeleteOpen(true)}
               sx={{ px: 2.5 }}
             >
               Xóa TKB
@@ -393,6 +392,19 @@ const TimetablePage = () => {
         isSolving={isSolving}
         open={isConfigOpen}
         onClose={() => setIsConfigOpen(false)}
+      />
+
+      {/* ── Delete Confirmation ──────────────────────────────────── */}
+      <DeleteDialog
+        open={isDeleteOpen}
+        title="Xóa thời khóa biểu"
+        description="thời khóa biểu hiện tại"
+        onConfirm={() => {
+          clearSavedTimetable();
+          setIsDeleteOpen(false);
+          toast.success('Đã xóa thời khóa biểu.');
+        }}
+        onClose={() => setIsDeleteOpen(false)}
       />
 
       <DragOverlay>
