@@ -21,6 +21,7 @@ import { toast } from 'react-toastify';
 import type { AssignmentRow, TeacherAvailability } from '@/types/lesson';
 import type { ClassSubject } from '@/types/class-subject';
 import {
+  deleteLessonAssignmentAPI,
   fetchLessonsByClassSubjectAPI,
   saveLessonAssignmentAPI
 } from '@/api/lesson.api';
@@ -56,6 +57,7 @@ const AssignmentPanel = ({
   >([]);
   const [loadingData, setLoadingData] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Load dữ liệu khi classSubject thay đổi
   useEffect(() => {
@@ -125,12 +127,9 @@ const AssignmentPanel = ({
       toast.error('Vui lòng chọn giáo viên cho tất cả các dòng');
       return;
     }
-    if (!isComplete) {
-      toast.error(
-        remaining > 0
-          ? `Còn thiếu ${remaining} tiết chưa được phân công`
-          : `Vượt quá ${Math.abs(remaining)} tiết, vui lòng điều chỉnh`
-      );
+
+    if (isOver) {
+      toast.error(`Vượt quá ${Math.abs(remaining)} tiết, vui lòng điều chỉnh`);
       return;
     }
 
@@ -165,6 +164,24 @@ const AssignmentPanel = ({
       onSaveSuccess(classSubject.id, rows);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeleteAssignment = async () => {
+    try {
+      setDeleting(true);
+      const res = await deleteLessonAssignmentAPI(classSubject.id);
+
+      // Reset lại state
+      setRows([]);
+      setInitialRows([]);
+
+      // Câp nhật lessonMap ở LessonPage để AssignmentStatusBadge re-render đúng
+      onSaveSuccess(classSubject.id, []);
+
+      toast.success(res.message);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -403,15 +420,27 @@ const AssignmentPanel = ({
           Thêm giáo viên
         </Button>
 
-        <Button
-          variant="contained"
-          startIcon={<SaveOutlined />}
-          onClick={() => handleSave()}
-          disabled={saving || rows.length === 0 || !isDirty} // ← chỉ enable khi có thay đổi
-          sx={{ textTransform: 'none', borderRadius: 2 }}
-        >
-          {saving ? 'Đang lưu...' : 'Lưu phân công'}
-        </Button>
+        <Box>
+          <Button
+            variant="outlined"
+            startIcon={<DeleteOutlined />}
+            onClick={handleDeleteAssignment}
+            disabled={deleting || rows.length === 0}
+            sx={{ textTransform: 'none', borderRadius: 2, mr: 1, color: 'error.main', borderColor: 'error.main' }}
+          >
+            {deleting ? 'Đang xóa...' : 'Xóa phân công'}
+          </Button>
+
+          <Button
+            variant="contained"
+            startIcon={<SaveOutlined />}
+            onClick={() => handleSave()}
+            disabled={saving || rows.length === 0 || !isDirty} // ← chỉ enable khi có thay đổi
+            sx={{ textTransform: 'none', borderRadius: 2 }}
+          >
+            {saving ? 'Đang lưu...' : 'Lưu phân công'}
+          </Button>
+        </Box>
       </Box>
     </Box>
   );

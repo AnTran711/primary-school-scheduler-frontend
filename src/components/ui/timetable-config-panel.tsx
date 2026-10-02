@@ -219,6 +219,7 @@ const TimetableConfigPanel = ({
                 <Tooltip
                   key={key}
                   title={isExcluded ? 'Nhấn để cho phép xếp tiết' : 'Nhấn để bỏ tiết này'}
+                  placement="top"
                   arrow
                 >
                   <Box

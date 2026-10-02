@@ -18,8 +18,18 @@ export const fetchLessonsOverviewByClassAPI = async (schoolClassId: string) => {
   return res;
 };
 
+// Lưu phân công
 export const saveLessonAssignmentAPI = async (data: BulkLessonRequest) => {
   const res: ApiResponse<string> = await api.post('/lessons', data);
+
+  return res;
+};
+
+// Xóa phân công
+export const deleteLessonAssignmentAPI = async (classSubjectId: string) => {
+  const res: ApiResponse<string> = await api.delete(
+    `/lessons/assignment?classSubjectId=${classSubjectId}`
+  );
 
   return res;
 };
