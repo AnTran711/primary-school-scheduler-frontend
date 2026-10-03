@@ -14,18 +14,17 @@ import {
   PeopleOutlined
 } from '@mui/icons-material';
 import { useSchoolClassStore } from '@/stores/school-class-store';
-import type { AssignmentRow } from '@/types/lesson';
 import type { ClassSubject } from '@/types/class-subject';
 import { fetchClassSubjectsByClassAPI } from '@/api/class-subject.api';
 import AssignmentStatusBadge from '@/components/ui/assignment-status-badge';
 import AssignmentPanel from '@/components/ui/assignment-panel';
 import TeacherWorkloadDialog from '@/components/ui/teacher-workload-dialog';
-import { fetchLessonsByClassSubjectAPI } from '@/api/lesson.api';
+import { fetchLessonsOverviewByClassAPI } from '@/api/lesson.api';
 import PageHeader from '@/components/ui/page-header';
 
-// ─── lessonMap: lưu tổng tiết đã phân công theo classSubjectId ───────────────
+// ─── assignedCountMap: lưu tổng tiết đã phân công theo classSubjectId ────────
 
-type LessonMap = Record<string, AssignmentRow[]>;
+type AssignedCountMap = Record<string, number>;
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -34,7 +33,7 @@ const LessonPage = () => {
 
   const [selectedClassId, setSelectedClassId] = useState('');
   const [classSubjects, setClassSubjects] = useState<ClassSubject[]>([]);
-  const [lessonMap, setLessonMap] = useState<LessonMap>({});
+  const [assignedCountMap, setAssignedCountMap] = useState<AssignedCountMap>({});
   const [loadingSubjects, setLoadingSubjects] = useState(false);
   const [activeSubject, setActiveSubject] = useState<ClassSubject | null>(null);
   const [workloadDialogOpen, setWorkloadDialogOpen] = useState(false);
@@ -44,7 +43,7 @@ const LessonPage = () => {
     const load = async () => {
       if (!selectedClassId) {
         setClassSubjects([]);
-        setLessonMap({});
+        setAssignedCountMap({});
         setActiveSubject(null);
         return;
       }
@@ -52,17 +51,21 @@ const LessonPage = () => {
       setLoadingSubjects(true);
       setActiveSubject(null);
       try {
-        const res = await fetchClassSubjectsByClassAPI(selectedClassId);
-        setClassSubjects(res?.data ?? []);
+        // Load danh sách môn + tổng tiết đã phân công song song
+        const [subjectsRes, overviewRes] = await Promise.all([
+          fetchClassSubjectsByClassAPI(selectedClassId),
+          fetchLessonsOverviewByClassAPI(selectedClassId)
+        ]);
 
-        // Load trạng thái phân công của tất cả môn
-        const entries = await Promise.all(
-          res.data.map(async (cs: ClassSubject) => {
-            const res = await fetchLessonsByClassSubjectAPI(cs.id);
-            return [cs.id, res.data?.assignments] as const;
-          })
-        );
-        setLessonMap(Object.fromEntries(entries));
+        setClassSubjects(subjectsRes?.data ?? []);
+
+        // Group overview theo classSubjectId và sum lessonCount
+        const countMap: AssignedCountMap = {};
+        for (const item of overviewRes?.data ?? []) {
+          countMap[item.classSubjectId] =
+            (countMap[item.classSubjectId] ?? 0) + item.lessonCount;
+        }
+        setAssignedCountMap(countMap);
       } finally {
         setLoadingSubjects(false);
       }
@@ -70,19 +73,13 @@ const LessonPage = () => {
     load();
   }, [selectedClassId]);
 
-  // Callback từ AssignmentPanel khi lưu thành công
-  // → cập nhật lessonMap để AssignmentStatusBadge re-render đúng
+  // Callback từ AssignmentPanel khi lưu/xóa thành công
+  // → cập nhật assignedCountMap để AssignmentStatusBadge re-render đúng
   const handleSaveSuccess = (
     classSubjectId: string,
-    assignments: AssignmentRow[]
+    totalAssigned: number
   ) => {
-    setLessonMap((prev) => ({ ...prev, [classSubjectId]: assignments }));
-  };
-
-  const getAssignedLessons = (csId: string): number => {
-    const assignments = lessonMap[csId];
-    if (!assignments) return 0;
-    return assignments.reduce((sum, a) => sum + a.lessonCount, 0);
+    setAssignedCountMap((prev) => ({ ...prev, [classSubjectId]: totalAssigned }));
   };
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -196,7 +193,7 @@ const LessonPage = () => {
                 </Box>
               ) : (
                 classSubjects.map((cs) => {
-                  const assigned = getAssignedLessons(cs.id);
+                  const assigned = assignedCountMap[cs.id] ?? 0;
                   const isActive = activeSubject?.id === cs.id;
 
                   return (

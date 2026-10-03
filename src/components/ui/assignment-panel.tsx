@@ -40,7 +40,7 @@ const getTotalAssigned = (rows: AssignmentRow[]) =>
 interface AssignmentPanelProps {
   classSubject: ClassSubject;
   onBack: () => void;
-  onSaveSuccess: (classSubjectId: string, assignments: AssignmentRow[]) => void;
+  onSaveSuccess: (classSubjectId: string, totalAssigned: number) => void;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -160,8 +160,8 @@ const AssignmentPanel = ({
       // Cập nhật initialRows để isDirty = false sau khi lưu
       setInitialRows([...rows]);
 
-      // Thông báo lên LessonPage để cập nhật lessonMap
-      onSaveSuccess(classSubject.id, rows);
+      // Thông báo lên LessonPage để cập nhật assignedCountMap
+      onSaveSuccess(classSubject.id, getTotalAssigned(rows));
     } finally {
       setSaving(false);
     }
@@ -176,8 +176,8 @@ const AssignmentPanel = ({
       setRows([]);
       setInitialRows([]);
 
-      // Câp nhật lessonMap ở LessonPage để AssignmentStatusBadge re-render đúng
-      onSaveSuccess(classSubject.id, []);
+      // Cập nhật assignedCountMap ở LessonPage để AssignmentStatusBadge re-render đúng
+      onSaveSuccess(classSubject.id, 0);
 
       toast.success(res.message);
     } finally {
@@ -334,7 +334,7 @@ const AssignmentPanel = ({
                       min: 1,
                       max: selectedTeacher
                         ? selectedTeacher.numberOfLessonsPerWeek -
-                          selectedTeacher.assignedLessons
+                        selectedTeacher.assignedLessons
                         : classSubject.lessonsPerWeek,
                       style: { textAlign: 'center' }
                     }
